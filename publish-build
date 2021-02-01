@@ -234,7 +234,7 @@ fi
 echo Sign RPMs...
 rpm --addsign ${release}/*/*.rpm
 
-update_repo() {
+update_rpm_repo() {
     platform_name=$1
     platform=$2
 
@@ -270,29 +270,62 @@ update_repo() {
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
 
-    update_repo "x86_CentOS6" "el6"
-    update_repo "x86_64_CentOS6" "el6"
+    update_rpm_repo "x86_CentOS6" "el6"
+    update_rpm_repo "x86_64_CentOS6" "el6"
     if [ $repo = 'daily' ]; then
-        update_repo "x86_64_Fedora27" "fc27"
+        update_rpm_repo "x86_64_Fedora27" "fc27"
     fi
 
 fi
 
-update_repo "x86_64_AmazonLinux2" "amzn2"
-update_repo "x86_64_CentOS7" "el7"
-update_repo "x86_64_CentOS8" "el8"
+update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
+update_rpm_repo "x86_64_CentOS7" "el7"
+update_rpm_repo "x86_64_CentOS8" "el8"
 
 # Newer platforms
 if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
 
     if [ $repo = 'daily' ]; then
-        update_repo "x86_64_Fedora32" "fc32"
+        update_rpm_repo "x86_64_Fedora32" "fc32"
     fi
 
 fi
 
 
-#TODO: Debian Repositories
+update_deb_repo () {
+    platform_name=$1
+    distro=$2
+    code_name=$3
+
+    deb_repo_name=${major_ver}.${minor_ver}
+    if [ $repo != 'release' ]; then
+        deb_repo_name=${major_ver}.${minor_ver}-${repo}
+    fi
+
+    if ! $(aptly repo show $deb_repo_name > /dev/null 2>&1); then
+        aptly repo create --distribution=$code_name $deb_repo_name-$code_name
+    fi
+    aptly repo add $deb_repo_name-$code_name ${release}/${platform_name}
+
+    aptly publish repo $deb_repo_name-$code_name $distro/$deb_repo_name
+}
+
+# Platforms on the way out
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    echo No platforms on the way out
+fi
+
+update_deb_repo "x86_64_Debian9" "debian" "stretch"
+update_deb_repo "x86_64_Debian10" "debian" "buster"
+update_deb_repo "x86_64_Ubuntu16" "ubuntu" "xenial"
+update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
+update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
+
+# Newer platforms
+if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+    echo No new platforms
+fi
+
 
 # Clean up temp space
 echo Clean up temp space

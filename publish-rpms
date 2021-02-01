@@ -1,0 +1,131 @@
+#!/bin/bash
+# Usage: publish-rpms rpm-directory version repo
+
+usage() {
+    echo "Usage: $(basename $0) rpm-directory version repo"
+    echo
+    echo rpm-directory-example: /nobackup/tim/rpms
+    echo version examples: 8.8 current
+    echo repo examples: release, rc, daily, fips, etc
+
+}
+if [ $# -ne 3 ]; then
+    usage
+    exit 1
+fi
+
+release=$1
+version=$2
+repo=$3
+
+if [ ! -d $1 ]; then
+    echo ERROR: no $1 directory
+    usage
+    exit 1
+fi
+
+echo "RPM Directory: ${release}, Version: ${version}, Repo: ${repo}"
+
+read -p "Continue? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+fi
+
+killall gpg-agent
+eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
+
+repository="/p/condor/public/html/htcondor/repo"
+
+#Verify downloads
+echo Checking for all platforms...
+
+# Plaforms going away
+if [ "${version}" = "8.8" ]; then
+    for platform in fc27; do
+        files=$(ls $release/*.${platform}.*.rpm 2>/dev/null | wc -l)
+        if [ $files -eq 0 ]; then
+            echo ERROR: $platform not present!
+        fi
+    done
+fi
+
+for platform in amzn2 el7 el8; do
+    files=$(ls $release/*.${platform}.*.rpm 2>/dev/null | wc -l)
+    if [ $files -eq 0 ]; then
+        echo ERROR: $platform not present!
+    fi
+done
+
+# New platforms
+if [ "${version}" != "8.8" ]; then
+    for platform in fc32; do
+        files=$(ls $release/*.${platform}.*.rpm 2>/dev/null | wc -l)
+        if [ $files -eq 0 ]; then
+            echo ERROR: $platform not present!
+        fi
+    done
+fi
+
+read -p "Continue? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    exit 1
+fi
+
+# Move RPMs into place
+
+# Key defined in the ~/.rpmmacros file
+echo Sign RPMs...
+rpm --addsign ${release}/*.rpm
+
+update_repo() {
+    platform=$1
+
+    mkdir -p ${repository}/${version}/${platform}/${repo}
+    mkdir -p ${repository}/${version}/${platform}/${repo}/SRPMS
+    mkdir -p ${repository}/${version}/${platform}/${repo}/debug
+
+    cp -p ${release}/*.${platform}.*.rpm \
+       ${repository}/${version}/${platform}/${repo}
+
+    echo ======= ${version}/${platform}/${repo}/SRPMS =======
+    mv ${repository}/${version}/${platform}/${repo}/*.src.rpm \
+       ${repository}/${version}/${platform}/${repo}/SRPMS
+    createrepo --update \
+       ${repository}/${version}/${platform}/${repo}/SRPMS
+
+    echo ======= ${version}/${platform}/${repo}/debug =======
+    mv ${repository}/${version}/${platform}/${repo}/*-debug*.rpm \
+       ${repository}/${version}/${platform}/${repo}/debug
+    createrepo --update \
+       ${repository}/${version}/${platform}/${repo}/debug
+
+    echo ======= ${version}/${platform}/${repo} =======
+    createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
+       ${repository}/${version}/${platform}/${repo}
+}
+
+# Platforms on the way out
+if [ "${version}" = "8.8" ]; then
+
+    if [ $repo = 'daily' ]; then
+        update_repo "fc27"
+    fi
+
+fi
+
+update_repo "amzn2"
+update_repo "el7"
+update_repo "el8"
+
+# Newer platforms
+if [ "${version}" != "8.8" ]; then
+
+    if [ $repo = 'daily' ]; then
+        update_repo "fc32"
+    fi
+
+fi

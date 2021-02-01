@@ -1,0 +1,222 @@
+#!/bin/bash
+# Usage: publish-release 8.x.y build-id (release, testing, development, fips)
+
+batlab='batlab.chtc.wisc.edu'
+
+usage() {
+    echo "Usage: $(basename $0) version build-id, repo"
+    echo
+    echo version examples: 8.8.2, 8.9.1
+    echo build-id exampels: 543234
+    echo repo examples: release, testing, development, fips, etc
+
+}
+if [ $# -ne 3 ]; then
+    usage
+    exit 1
+fi
+
+version=(${1//./ })
+major_ver=${version[0]}
+minor_ver=${version[1]}
+patch_ver=${version[2]}
+version=$1
+
+build_id=$2
+
+repo=$3
+
+
+if (( $minor_ver % 2 )); then
+    repo_version='latest'
+    win64=8
+    echo Windows $win64 box provides the 64-bit release
+else
+    repo_version="${major_ver}.${minor_ver}"
+    win32=8
+    win64=10
+    echo Windows $win32 box provides the 32-bit release
+    echo Windows $win64 box provides the 64-bit release
+fi
+
+read -p "Continue? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+fi
+
+rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
+
+files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
+
+if [ $files -eq 0 ]; then
+    echo Version mismatch!
+    echo Clean up temp space
+    rm -rf ${release}
+    exit 1
+fi
+release="/tmp/condor_${version}-${build_id}/public"
+tarball="/p/condor/public/html/htcondor/tarball/${repo_version}/${version}/${repo}"
+repository="/p/condor/public/html/htcondor/repo"
+
+#Verify downloads
+echo Checking for all platforms...
+
+# Plaforms going away
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    for platform in x86_64_CentOS6 x86_CentOS6 \
+                    x86_64_Fedora27 \
+                    x86_64_Windows${win32}; do
+        if [ ! -d ${release}/${platform} ]; then
+            echo ERROR: $platform not present!
+        fi
+    done
+fi
+
+for platform in x86_64_AmazonLinux2 \
+                x86_64_CentOS7 x86_64_CentOS8 \
+                x86_64_Debian9 x86_64_Debian10 \
+                x86_64_MacOSX15 \
+                x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20 \
+                x86_64_Windows${win64}; do
+    if [ ! -d ${release}/${platform} ]; then
+        echo ERROR: $platform not present!
+    fi
+done
+
+# New platforms
+if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+    for platform in x86_64_Fedora32; do
+        if [ ! -d ${release}/${platform} ]; then
+            echo ERROR: $platform not present!
+        fi
+    done
+fi
+
+read -p "Continue? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    echo Clean up temp space
+    rm -rf ${release}
+    exit 1
+fi
+
+# Move tarballs into place
+echo Publish tarballs...
+rm -rf ${tarball}
+mkdir -p ${tarball}
+
+# Platforms on the way out
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+
+    for platform in "x86_64_CentOS6" "x86_CentOS6" \
+                    "x86_64_Fedora27"; do
+        echo ======= $platform =======
+        mv ${release}/${platform}/*stripped.tar.gz \
+           ${tarball}
+    done
+
+    echo ======= x86_Windows =======
+    mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.zip \
+       ${tarball}/condor-${version}-${build_id}-Windows-x86.zip
+
+    mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.msi \
+       ${tarball}/condor-${version}-${build_id}-Windows-x86.msi
+
+fi
+
+for platform in "x86_64_AmazonLinux2" \
+                "x86_64_CentOS7" "x86_64_CentOS8" \
+                "x86_64_Debian9" "x86_64_Debian10" \
+                "x86_64_Ubuntu16" "x86_64_Ubuntu18" "x86_64_Ubuntu20"; do
+    echo ======= $platform =======
+    mv ${release}/${platform}/*stripped.tar.gz \
+       ${tarball}
+done
+
+echo ======= x86_64_MacOSX =======
+mv ${release}/x86_64_MacOSX15/condor-${version}-${build_id}-x86_64_MacOSX15-stripped.tar.gz \
+   ${tarball}/condor-${version}-${build_id}-x86_64_MacOSX-stripped.tar.gz
+
+mv ${release}/x86_64_MacOSX15/condor-${version}-${build_id}-x86_64_MacOSX15-unstripped.tar.gz \
+   ${tarball}/condor-${version}-${build_id}-x86_64_MacOSX-unstripped.tar.gz
+
+echo ======= x86_64_Windows =======
+mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
+   ${tarball}/condor-${version}-${build_id}-Windows-x64.zip
+
+mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
+   ${tarball}/condor-${version}-${build_id}-Windows-x64.msi
+
+
+echo Sign tarballs...
+(cd ${tarball} && sha256sum *.tar.gz *.zip *.msi > sha256sum.txt)
+(cd ${tarball} && gpg --sign -u 0x670079F6 sha256sum.txt)
+
+# Small shadow for 8.8
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    echo Repackage for small shadow...
+    (cd ${release} && 32bit-debuginfo $(pwd))
+fi
+
+# Move RPMs into place
+
+# Key defined in the ~/.rpmmacros file
+echo Sign RPMs...
+rpm --addsign ${release}/*/*.rpm
+
+update_repo() {
+    platform_name=$1
+    platform=$2
+
+    mkdir -p ${repository}/${repo_version}/${platform}/${repo}
+    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
+
+    echo ======= Updating ${repo_version}/${platform}/${repo}/SRPMS =======
+    mv ${release}/${platform_name}/*.src.rpm \
+       ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+    createrepo --update \
+       ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+
+    echo ======= ${repo_version}/${platform}/${repo}/debug =======
+    mv ${release}/${platform_name}/*-debuginfo-*.rpm \
+       ${repository}/${repo_version}/${platform}/${repo}/debug
+    createrepo --update \
+       ${repository}/${repo_version}/${platform}/${repo}/debug
+
+    echo ======= ${repo_version}/${platform}/${repo} =======
+    mv ${release}/${platform_name}/*.rpm \
+       ${repository}/${repo_version}/${platform}/${repo}
+    createrepo --update \
+       ${repository}/${repo_version}/${platform}/${repo}
+}
+
+# Platforms on the way out
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+
+    update_repo "x86_64_CentOS6" "el6"
+    update_repo "x86_CentOS6" "el6"
+    update_repo "x86_64_Fedora27" "fc27"
+
+fi
+
+update_repo "x86_64_AmazonLinux2" "amzn2"
+update_repo "x86_64_CentOS7" "el7"
+update_repo "x86_64_CentOS8" "el8"
+
+# Newer platforms
+if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+
+    update_repo "x86_64_Fedora32" "fc32"
+
+fi
+
+
+#TODO: Debian Repositories
+
+# Clean up temp space
+echo Clean up temp space
+rm -rf ${release}

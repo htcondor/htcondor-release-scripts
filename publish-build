@@ -1,17 +1,21 @@
 #!/bin/bash
-# Usage: publish-release 8.x.y build-id (release, testing, development, fips)
+# Usage: publish-release 8.x.y build-id (release, rc, daily, fips)
 
-batlab='batlab.chtc.wisc.edu'
+#TODO: Add processing for Debian and Ubuntu repos
+#TODO: Sign with a daily key (no pass-phrase)
+
+batlab='condorauto@batlab.chtc.wisc.edu'
 
 usage() {
-    echo "Usage: $(basename $0) version build-id, repo"
+    echo "Usage: $(basename $0) version build_id repo build_date"
     echo
     echo version examples: 8.8.2, 8.9.1
-    echo build-id exampels: 543234
-    echo repo examples: release, testing, development, fips, etc
+    echo build_id example: 543234
+    echo repo examples: release, rc, daily, fips, etc
+    echo build_date example: 20201019
 
 }
-if [ $# -ne 3 ]; then
+if [ $# -ne 4 ]; then
     usage
     exit 1
 fi
@@ -21,23 +25,15 @@ major_ver=${version[0]}
 minor_ver=${version[1]}
 patch_ver=${version[2]}
 version=$1
+repo_version="${major_ver}.${minor_ver}"
 
 build_id=$2
 
 repo=$3
 
+build_date="-${4}"
 
-if (( $minor_ver % 2 )); then
-    repo_version='latest'
-    win64=8
-    echo Windows $win64 box provides the 64-bit release
-else
-    repo_version="${major_ver}.${minor_ver}"
-    win32=8
-    win64=10
-    echo Windows $win32 box provides the 32-bit release
-    echo Windows $win64 box provides the 64-bit release
-fi
+echo "Version: ${version}, Build ID: ${build_id}, Repo: ${repo}, Build Date: ${4}"
 
 read -p "Continue? " -n 1 -r
 echo
@@ -46,19 +42,59 @@ then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
 fi
 
+if [ $repo = 'release' ]; then
+    build_date=""
+fi
+
+if [ $repo = 'fips' ]; then
+    build_date=""
+fi
+
+if [ $repo = 'private' ]; then
+    build_date=""
+fi
+
+killall gpg-agent
+eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
+
+if (( $minor_ver % 2 )); then
+    repo_version='current'
+    win64=10
+    echo Windows $win64 box provides the 64-bit release
+else
+    win32=8
+    win64=10
+    echo Windows $win32 box provides the 32-bit release
+    echo Windows $win64 box provides the 64-bit release
+fi
+
+macosx=15
+echo Using MacOSX${macosx}
+
+read -p "Continue? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+fi
+
+ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
+ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
 rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
 
 files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
 
+release="/tmp/condor_${version}-${build_id}/public"
+tarball="/p/condor/public/html/htcondor/tarball/${repo_version}/${version}/${repo}"
+repository="/p/condor/public/html/htcondor/repo"
+
 if [ $files -eq 0 ]; then
     echo Version mismatch!
+    ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
     echo Clean up temp space
     rm -rf ${release}
     exit 1
 fi
-release="/tmp/condor_${version}-${build_id}/public"
-tarball="/p/condor/public/html/htcondor/tarball/${repo_version}/${version}/${repo}"
-repository="/p/condor/public/html/htcondor/repo"
 
 #Verify downloads
 echo Checking for all platforms...
@@ -77,7 +113,7 @@ fi
 for platform in x86_64_AmazonLinux2 \
                 x86_64_CentOS7 x86_64_CentOS8 \
                 x86_64_Debian9 x86_64_Debian10 \
-                x86_64_MacOSX15 \
+                x86_64_MacOSX${macosx} \
                 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20 \
                 x86_64_Windows${win64}; do
     if [ ! -d ${release}/${platform} ]; then
@@ -98,61 +134,92 @@ read -p "Continue? " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
+    ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
     echo Clean up temp space
     rm -rf ${release}
     exit 1
 fi
 
+if [ $repo = 'release' ]; then
+    ssh $batlab nmi_pin --days=365 --force ${build_id}
+else
+    ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
+fi
+
 # Move tarballs into place
 echo Publish tarballs...
-rm -rf ${tarball}
+# rm -rf ${tarball}
 mkdir -p ${tarball}
 
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
 
-    for platform in "x86_64_CentOS6" "x86_CentOS6" \
-                    "x86_64_Fedora27"; do
+    if [ $repo = 'daily' ]; then
+        platforms="x86_CentOS6 x86_64_CentOS6 x86_64_Fedora27"
+    fi
+    if [ $repo = 'rc' ]; then
+        platforms="x86_CentOS6 x86_64_CentOS6" 
+    fi
+    if [ $repo = 'release' ]; then
+        platforms="x86_CentOS6 x86_64_CentOS6" 
+    fi
+    for platform in $platforms; do
         echo ======= $platform =======
-        mv ${release}/${platform}/*stripped.tar.gz \
-           ${tarball}
+        mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+           ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
+        mv ${release}/${platform}/condor-${version}*-${platform}-unstripped.tar.gz \
+           ${tarball}/condor-${version}${build_date}-${platform}-unstripped.tar.gz
     done
 
     echo ======= x86_Windows =======
     mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.zip \
-       ${tarball}/condor-${version}-${build_id}-Windows-x86.zip
+       ${tarball}/condor-${version}${build_date}-Windows-x86.zip
 
     mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.msi \
-       ${tarball}/condor-${version}-${build_id}-Windows-x86.msi
+       ${tarball}/condor-${version}${build_date}-Windows-x86.msi
 
 fi
 
-for platform in "x86_64_AmazonLinux2" \
-                "x86_64_CentOS7" "x86_64_CentOS8" \
-                "x86_64_Debian9" "x86_64_Debian10" \
-                "x86_64_Ubuntu16" "x86_64_Ubuntu18" "x86_64_Ubuntu20"; do
+platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20"
+if [ $repo = 'rc' ]; then
+    platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20"
+fi
+if [ $repo = 'release' ]; then
+    platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20"
+fi
+for platform in $platforms; do
     echo ======= $platform =======
-    mv ${release}/${platform}/*stripped.tar.gz \
-       ${tarball}
+    mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+       ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
+    mv ${release}/${platform}/condor-${version}*-${platform}-unstripped.tar.gz \
+       ${tarball}/condor-${version}${build_date}-${platform}-unstripped.tar.gz
 done
 
 echo ======= x86_64_MacOSX =======
-mv ${release}/x86_64_MacOSX15/condor-${version}-${build_id}-x86_64_MacOSX15-stripped.tar.gz \
-   ${tarball}/condor-${version}-${build_id}-x86_64_MacOSX-stripped.tar.gz
+mv ${release}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
+   ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
 
-mv ${release}/x86_64_MacOSX15/condor-${version}-${build_id}-x86_64_MacOSX15-unstripped.tar.gz \
-   ${tarball}/condor-${version}-${build_id}-x86_64_MacOSX-unstripped.tar.gz
+mv ${release}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-unstripped.tar.gz \
+   ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-unstripped.tar.gz
 
 echo ======= x86_64_Windows =======
 mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
-   ${tarball}/condor-${version}-${build_id}-Windows-x64.zip
+   ${tarball}/condor-${version}${build_date}-Windows-x64.zip
 
 mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
-   ${tarball}/condor-${version}-${build_id}-Windows-x64.msi
+   ${tarball}/condor-${version}${build_date}-Windows-x64.msi
 
+# Copy source tarball from most earliest Debian build
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    src_platform="x86_64_Debian9"
+else
+    src_platform="x86_64_Debian9"
+fi
+cp -p ${release}/${src_platform}/condor_${version}.orig.tar.gz \
+      ${tarball}/condor-${version}${build_date}-src.tar.gz
 
 echo Sign tarballs...
-(cd ${tarball} && sha256sum *.tar.gz *.zip *.msi > sha256sum.txt)
+(cd ${tarball} && sha256sum *${version}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x670079F6 sha256sum.txt)
 
 # Small shadow for 8.8
@@ -175,31 +242,39 @@ update_repo() {
     mkdir -p ${repository}/${repo_version}/${platform}/${repo}/SRPMS
     mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
 
-    echo ======= Updating ${repo_version}/${platform}/${repo}/SRPMS =======
+    echo ======= ${repo_version}/${platform}/${repo}/SRPMS =======
     mv ${release}/${platform_name}/*.src.rpm \
        ${repository}/${repo_version}/${platform}/${repo}/SRPMS
     createrepo --update \
        ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+    gpg --detach-sign --yes --armor \
+       ${repository}/${repo_version}/${platform}/${repo}/SRPMS/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${repo}/debug =======
-    mv ${release}/${platform_name}/*-debuginfo-*.rpm \
+    mv ${release}/${platform_name}/*-debug*.rpm \
        ${repository}/${repo_version}/${platform}/${repo}/debug
     createrepo --update \
        ${repository}/${repo_version}/${platform}/${repo}/debug
+    gpg --detach-sign --yes --armor \
+       ${repository}/${repo_version}/${platform}/${repo}/debug/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${repo} =======
     mv ${release}/${platform_name}/*.rpm \
        ${repository}/${repo_version}/${platform}/${repo}
-    createrepo --update \
+    createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
        ${repository}/${repo_version}/${platform}/${repo}
+    gpg --detach-sign --yes --armor \
+       ${repository}/${repo_version}/${platform}/${repo}/repodata/repomd.xml
 }
 
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
 
-    update_repo "x86_64_CentOS6" "el6"
     update_repo "x86_CentOS6" "el6"
-    update_repo "x86_64_Fedora27" "fc27"
+    update_repo "x86_64_CentOS6" "el6"
+    if [ $repo = 'daily' ]; then
+        update_repo "x86_64_Fedora27" "fc27"
+    fi
 
 fi
 
@@ -210,7 +285,9 @@ update_repo "x86_64_CentOS8" "el8"
 # Newer platforms
 if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
 
-    update_repo "x86_64_Fedora32" "fc32"
+    if [ $repo = 'daily' ]; then
+        update_repo "x86_64_Fedora32" "fc32"
+    fi
 
 fi
 

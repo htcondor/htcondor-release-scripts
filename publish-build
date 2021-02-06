@@ -309,7 +309,6 @@ update_deb_repo () {
     if $(aptly repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
         aptly repo drop $deb_repo_name-$code_name
     fi
-    aptly db cleanup
 
     aptly repo create --distribution=$code_name $deb_repo_name-$code_name
     aptly repo add $deb_repo_name-$code_name ${release}/${platform_name}
@@ -340,6 +339,8 @@ update_deb_repo "x86_64_Debian10" "debian" "buster"
 update_deb_repo "x86_64_Ubuntu16" "ubuntu" "xenial"
 update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
 update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
+
+aptly db cleanup
 
 rsync -av --delete /nobackup/tim/aptly/public/debian/${deb_repo_name} /p/condor/public/html/htcondor/repo/debian/
 rsync -av --delete /nobackup/tim/aptly/public/ubuntu/${deb_repo_name} /p/condor/public/html/htcondor/repo/ubuntu/

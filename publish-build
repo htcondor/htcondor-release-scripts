@@ -100,8 +100,7 @@ echo Checking for all platforms...
 
 # Plaforms going away
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-    for platform in x86_64_CentOS6 x86_CentOS6 \
-                    x86_64_Fedora27 \
+    for platform in x86_64_Fedora27 \
                     x86_64_Windows${win32}; do
         if [ ! -d ${release}/${platform} ]; then
             echo ERROR: $platform not present!
@@ -154,21 +153,15 @@ mkdir -p ${tarball}
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
 
     if [ $repo = 'daily' ]; then
-        platforms="x86_CentOS6 x86_64_CentOS6 x86_64_Fedora27"
+        platforms="x86_64_Fedora27"
+        for platform in $platforms; do
+            echo ======= $platform =======
+            mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+               ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
+            mv ${release}/${platform}/condor-${version}*-${platform}-unstripped.tar.gz \
+               ${tarball}/condor-${version}${build_date}-${platform}-unstripped.tar.gz
+        done
     fi
-    if [ $repo = 'rc' ]; then
-        platforms="x86_CentOS6 x86_64_CentOS6" 
-    fi
-    if [ $repo = 'release' ]; then
-        platforms="x86_CentOS6 x86_64_CentOS6" 
-    fi
-    for platform in $platforms; do
-        echo ======= $platform =======
-        mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
-           ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
-        mv ${release}/${platform}/condor-${version}*-${platform}-unstripped.tar.gz \
-           ${tarball}/condor-${version}${build_date}-${platform}-unstripped.tar.gz
-    done
 
     echo ======= x86_Windows =======
     mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.zip \
@@ -218,7 +211,7 @@ cp -p ${release}/${src_platform}/condor_${version}.orig.tar.gz \
       ${tarball}/condor-${version}${build_date}-src.tar.gz
 
 echo Sign tarballs...
-(cd ${tarball} && rm sha256sum.txt.gpg)
+(cd ${tarball} && rm -f sha256sum.txt.gpg)
 (cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x670079F6 sha256sum.txt)
 
@@ -270,8 +263,6 @@ update_rpm_repo() {
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
 
-    update_rpm_repo "x86_CentOS6" "el6"
-    update_rpm_repo "x86_64_CentOS6" "el6"
     if [ $repo = 'daily' ]; then
         update_rpm_repo "x86_64_Fedora27" "fc27"
     fi

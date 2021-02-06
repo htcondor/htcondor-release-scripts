@@ -1,7 +1,6 @@
 #!/bin/bash
 # Usage: publish-release 8.x.y build-id (release, rc, daily, fips)
 
-#TODO: Add processing for Debian and Ubuntu repos
 #TODO: Sign with a daily key (no pass-phrase)
 
 batlab='condorauto@batlab.chtc.wisc.edu'
@@ -219,7 +218,8 @@ cp -p ${release}/${src_platform}/condor_${version}.orig.tar.gz \
       ${tarball}/condor-${version}${build_date}-src.tar.gz
 
 echo Sign tarballs...
-(cd ${tarball} && sha256sum *${version}* >> sha256sum.txt)
+(cd ${tarball} && rm sha256sum.txt.gpg)
+(cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x670079F6 sha256sum.txt)
 
 # Small shadow for 8.8
@@ -292,19 +292,26 @@ if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
 fi
 
 
+cleanup_deb_repo () {
+    distro=$1
+    code_name=$2
+
+    if $(aptly publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
+        aptly publish drop $code_name $distro/$deb_repo_name
+    fi
+}
+
 update_deb_repo () {
     platform_name=$1
     distro=$2
     code_name=$3
 
-    deb_repo_name=${major_ver}.${minor_ver}
-    if [ $repo != 'release' ]; then
-        deb_repo_name=${major_ver}.${minor_ver}-${repo}
+    if $(aptly repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
+        aptly repo drop $deb_repo_name-$code_name
     fi
+    aptly db cleanup
 
-    if ! $(aptly repo show $deb_repo_name > /dev/null 2>&1); then
-        aptly repo create --distribution=$code_name $deb_repo_name-$code_name
-    fi
+    aptly repo create --distribution=$code_name $deb_repo_name-$code_name
     aptly repo add $deb_repo_name-$code_name ${release}/${platform_name}
 
     aptly publish repo $deb_repo_name-$code_name $distro/$deb_repo_name
@@ -315,11 +322,27 @@ if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
     echo No platforms on the way out
 fi
 
+deb_repo_name=${major_ver}.${minor_ver}
+if [ $repo != 'release' ]; then
+    deb_repo_name=${deb_repo_name}-${repo}
+fi
+
+echo "Cleaning published repostories"
+cleanup_deb_repo "debian" "stretch"
+cleanup_deb_repo "debian" "buster"
+cleanup_deb_repo "ubuntu" "xenial"
+cleanup_deb_repo "ubuntu" "bionic"
+cleanup_deb_repo "ubuntu" "focal"
+
+echo "Updating published repostories"
 update_deb_repo "x86_64_Debian9" "debian" "stretch"
 update_deb_repo "x86_64_Debian10" "debian" "buster"
 update_deb_repo "x86_64_Ubuntu16" "ubuntu" "xenial"
 update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
 update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
+
+rsync -av --delete /nobackup/tim/aptly/public/debian/${deb_repo_name} /p/condor/public/html/htcondor/repo/debian/
+rsync -av --delete /nobackup/tim/aptly/public/ubuntu/${deb_repo_name} /p/condor/public/html/htcondor/repo/ubuntu/
 
 # Newer platforms
 if [ "${major_ver}.${minor_ver}" != "8.8" ]; then

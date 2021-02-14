@@ -57,7 +57,6 @@ killall gpg-agent
 eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
 
 if (( $minor_ver % 2 )); then
-    repo_version='current'
     win64=10
     echo Windows $win64 box provides the 64-bit release
 else
@@ -101,6 +100,7 @@ echo Checking for all platforms...
 # Plaforms going away
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
     for platform in x86_64_Fedora27 \
+                    x86_64_Ubuntu16 \
                     x86_64_Windows${win32}; do
         if [ ! -d ${release}/${platform} ]; then
             echo ERROR: $platform not present!
@@ -112,7 +112,7 @@ for platform in x86_64_AmazonLinux2 \
                 x86_64_CentOS7 x86_64_CentOS8 \
                 x86_64_Debian9 x86_64_Debian10 \
                 x86_64_MacOSX${macosx} \
-                x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20 \
+                x86_64_Ubuntu18 x86_64_Ubuntu20 \
                 x86_64_Windows${win64}; do
     if [ ! -d ${release}/${platform} ]; then
         echo ERROR: $platform not present!
@@ -149,19 +149,14 @@ echo Publish tarballs...
 # rm -rf ${tarball}
 mkdir -p ${tarball}
 
+platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu18 x86_64_Ubuntu20"
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
 
     if [ $repo = 'daily' ]; then
-        platforms="x86_64_Fedora27"
-        for platform in $platforms; do
-            echo ======= $platform =======
-            mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
-               ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
-            mv ${release}/${platform}/condor-${version}*-${platform}-unstripped.tar.gz \
-               ${tarball}/condor-${version}${build_date}-${platform}-unstripped.tar.gz
-        done
+        platforms="$platforms x86_64_Fedora27"
     fi
+    platforms="$platforms x86_64_Ubuntu16"
 
     echo ======= x86_Windows =======
     mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.zip \
@@ -170,29 +165,23 @@ if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
     mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.msi \
        ${tarball}/condor-${version}${build_date}-Windows-x86.msi
 
+else
+    # New platforms
+    if [ $repo = 'daily' ]; then
+        platforms="$platforms x86_64_Fedora32"
+    fi
 fi
 
-platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20"
-if [ $repo = 'rc' ]; then
-    platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20"
-fi
-if [ $repo = 'release' ]; then
-    platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu16 x86_64_Ubuntu18 x86_64_Ubuntu20"
-fi
 for platform in $platforms; do
     echo ======= $platform =======
     mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
-    mv ${release}/${platform}/condor-${version}*-${platform}-unstripped.tar.gz \
-       ${tarball}/condor-${version}${build_date}-${platform}-unstripped.tar.gz
 done
 
 echo ======= x86_64_MacOSX =======
 mv ${release}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
    ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
 
-mv ${release}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-unstripped.tar.gz \
-   ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-unstripped.tar.gz
 
 echo ======= x86_64_Windows =======
 mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
@@ -307,39 +296,47 @@ update_deb_repo () {
     aptly publish repo $deb_repo_name-$code_name $distro/$deb_repo_name
 }
 
-# Platforms on the way out
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-    echo No platforms on the way out
-fi
-
 deb_repo_name=${major_ver}.${minor_ver}
 if [ $repo != 'release' ]; then
     deb_repo_name=${deb_repo_name}-${repo}
+
+    echo "Dropping published repostories"
+    # Platforms on the way out
+    if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+        cleanup_deb_repo "ubuntu" "xenial"
+    fi
+
+    cleanup_deb_repo "debian" "stretch"
+    cleanup_deb_repo "debian" "buster"
+    cleanup_deb_repo "ubuntu" "bionic"
+    cleanup_deb_repo "ubuntu" "focal"
+
+    # Newer platforms
+    if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+        echo No new platforms
+    fi
+
+    echo "Updating published repostories"
+    # Platforms on the way out
+    if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+        update_deb_repo "x86_64_Ubuntu16" "ubuntu" "xenial"
+    fi
+
+    update_deb_repo "x86_64_Debian9" "debian" "stretch"
+    update_deb_repo "x86_64_Debian10" "debian" "buster"
+    update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
+    update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
+
+    # Newer platforms
+    if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+        echo No new platforms
+    fi
+
+    aptly db cleanup
 fi
-
-echo "Cleaning published repostories"
-cleanup_deb_repo "debian" "stretch"
-cleanup_deb_repo "debian" "buster"
-cleanup_deb_repo "ubuntu" "xenial"
-cleanup_deb_repo "ubuntu" "bionic"
-cleanup_deb_repo "ubuntu" "focal"
-
-echo "Updating published repostories"
-update_deb_repo "x86_64_Debian9" "debian" "stretch"
-update_deb_repo "x86_64_Debian10" "debian" "buster"
-update_deb_repo "x86_64_Ubuntu16" "ubuntu" "xenial"
-update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
-update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
-
-aptly db cleanup
 
 rsync -av --delete /nobackup/tim/aptly/public/debian/${deb_repo_name} /p/condor/public/html/htcondor/repo/debian/
 rsync -av --delete /nobackup/tim/aptly/public/ubuntu/${deb_repo_name} /p/condor/public/html/htcondor/repo/ubuntu/
-
-# Newer platforms
-if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
-    echo No new platforms
-fi
 
 
 # Clean up temp space

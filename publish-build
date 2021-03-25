@@ -57,11 +57,11 @@ killall gpg-agent
 eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
 
 if (( $minor_ver % 2 )); then
-    win64=10
+    win64=8
     echo Windows $win64 box provides the 64-bit release
 else
     win32=8
-    win64=10
+    win64=7
     echo Windows $win32 box provides the 32-bit release
     echo Windows $win64 box provides the 64-bit release
 fi
@@ -363,7 +363,18 @@ if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
     echo No new platforms
 fi
 
+# Put the new files in the pool
+rsync -av /nobackup/tim/aptly/public/debian/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo/debian/${deb_repo_name}/
+# Update the dists to point to the new files
+rsync -av /nobackup/tim/aptly/public/debian/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo/debian/${deb_repo_name}/
+# Delete any old files
 rsync -av --delete /nobackup/tim/aptly/public/debian/${deb_repo_name} /p/condor/public/html/htcondor/repo/debian/
+
+# Put the new files in the pool
+rsync -av /nobackup/tim/aptly/public/ubuntu/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo/ubuntu/${deb_repo_name}/
+# Update the dists to point to the new files
+rsync -av /nobackup/tim/aptly/public/ubuntu/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo/ubuntu/${deb_repo_name}/
+# Delete any old files
 rsync -av --delete /nobackup/tim/aptly/public/ubuntu/${deb_repo_name} /p/condor/public/html/htcondor/repo/ubuntu/
 
 

@@ -298,6 +298,9 @@ update_deb_repo () {
 
     if ! $(aptly repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
         aptly repo create --distribution=$code_name $deb_repo_name-$code_name
+        # If we just created the repository, be sure to add the necessary
+        # externals
+        aptly repo add $deb_repo_name-$code_name /nobackup/tim/externals/${platform_name}
     fi
     aptly repo add $deb_repo_name-$code_name ${release}/${platform_name}
 

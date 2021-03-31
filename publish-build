@@ -45,10 +45,6 @@ if [ $repo = 'release' ]; then
     build_date=""
 fi
 
-if [ $repo = 'fips' ]; then
-    build_date=""
-fi
-
 if [ $repo = 'private' ]; then
     build_date=""
 fi
@@ -56,25 +52,8 @@ fi
 killall gpg-agent
 eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
 
-if (( $minor_ver % 2 )); then
-    win64=8
-    echo Windows $win64 box provides the 64-bit release
-else
-    win32=8
-    win64=7
-    echo Windows $win32 box provides the 32-bit release
-    echo Windows $win64 box provides the 64-bit release
-fi
-
+win64=8
 macosx=15
-echo Using MacOSX${macosx}
-
-read -p "Continue? " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
-fi
 
 ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
 ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
@@ -98,10 +77,8 @@ fi
 echo Checking for all platforms...
 
 # Plaforms going away
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-    for platform in x86_64_Fedora27 \
-                    x86_64_Ubuntu16 \
-                    x86_64_Windows${win32}; do
+if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
+    for platform in x86_64_Debian9; do
         if [ ! -d ${release}/${platform} ]; then
             echo ERROR: $platform not present!
         fi
@@ -110,7 +87,7 @@ fi
 
 for platform in x86_64_AmazonLinux2 \
                 x86_64_CentOS7 x86_64_CentOS8 \
-                x86_64_Debian9 x86_64_Debian10 \
+                x86_64_Debian10 \
                 x86_64_MacOSX${macosx} \
                 x86_64_Ubuntu18 x86_64_Ubuntu20 \
                 x86_64_Windows${win64}; do
@@ -118,15 +95,6 @@ for platform in x86_64_AmazonLinux2 \
         echo ERROR: $platform not present!
     fi
 done
-
-# New platforms
-if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
-    for platform in x86_64_Fedora32; do
-        if [ ! -d ${release}/${platform} ]; then
-            echo ERROR: $platform not present!
-        fi
-    done
-fi
 
 read -p "Continue? " -n 1 -r
 echo
@@ -149,27 +117,14 @@ echo Publish tarballs...
 # rm -rf ${tarball}
 mkdir -p ${tarball}
 
-platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Ubuntu18 x86_64_Ubuntu20"
+platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian10 x86_64_Ubuntu18 x86_64_Ubuntu20"
+if [ $repo = 'daily' ]; then
+    platforms="$platforms x86_64_Fedora32"
+fi
+
 # Platforms on the way out
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-
-    if [ $repo = 'daily' ]; then
-        platforms="$platforms x86_64_Fedora27"
-    fi
-    platforms="$platforms x86_64_Ubuntu16"
-
-    echo ======= x86_Windows =======
-    mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.zip \
-       ${tarball}/condor-${version}${build_date}-Windows-x86.zip
-
-    mv ${release}/x86_64_Windows${win32}/condor-${version}-${build_id}-Windows${win32}-x86.msi \
-       ${tarball}/condor-${version}${build_date}-Windows-x86.msi
-
-else
-    # New platforms
-    if [ $repo = 'daily' ]; then
-        platforms="$platforms x86_64_Fedora32"
-    fi
+if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
+    platforms="$platforms x86_64_Debian9"
 fi
 
 for platform in $platforms; do
@@ -191,10 +146,10 @@ mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win6
    ${tarball}/condor-${version}${build_date}-Windows-x64.msi
 
 # Copy source tarball from most earliest Debian build
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
     src_platform="x86_64_Debian9"
 else
-    src_platform="x86_64_Debian9"
+    src_platform="x86_64_Debian10"
 fi
 cp -p ${release}/${src_platform}/condor_${version}.orig.tar.gz \
       ${tarball}/condor-${version}${build_date}-src.tar.gz
@@ -203,12 +158,6 @@ echo Sign tarballs...
 (cd ${tarball} && rm -f sha256sum.txt.gpg)
 (cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x670079F6 sha256sum.txt)
-
-# Small shadow for 8.8
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-    echo Repackage for small shadow...
-    (cd ${release} && 32bit-debuginfo $(pwd))
-fi
 
 # Move RPMs into place
 
@@ -249,27 +198,10 @@ update_rpm_repo() {
        ${repository}/${repo_version}/${platform}/${repo}/repodata/repomd.xml
 }
 
-# Platforms on the way out
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-
-    if [ $repo = 'daily' ]; then
-        update_rpm_repo "x86_64_Fedora27" "fc27"
-    fi
-
-fi
-
 update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
 update_rpm_repo "x86_64_CentOS7" "el7"
 update_rpm_repo "x86_64_CentOS8" "el8"
-
-# Newer platforms
-if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
-
-    if [ $repo = 'daily' ]; then
-        update_rpm_repo "x86_64_Fedora32" "fc32"
-    fi
-
-fi
+update_rpm_repo "x86_64_Fedora32" "fc32"
 
 # Update Debian/Ubuntu repositories
 
@@ -317,7 +249,7 @@ if [ $repo != 'release' ]; then
 
     echo "Dropping published repostories"
     # Platforms on the way out
-    if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
         drop_deb_publish "ubuntu" "xenial"
     fi
 
@@ -327,13 +259,13 @@ if [ $repo != 'release' ]; then
     drop_deb_publish "ubuntu" "focal"
 
     # Newer platforms
-    if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+    if [ "${major_ver}.${minor_ver}" != "9.0" ]; then
         echo No new platforms
     fi
 
     echo "Dropping repostories"
     # Platforms on the way out
-    if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
         drop_deb_repo "ubuntu" "xenial"
     fi
 
@@ -343,7 +275,7 @@ if [ $repo != 'release' ]; then
     drop_deb_repo "ubuntu" "focal"
 
     # Newer platforms
-    if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+    if [ "${major_ver}.${minor_ver}" != "9.0" ]; then
         echo No new platforms
     fi
 
@@ -352,17 +284,16 @@ fi
 
 echo "Updating published repostories"
 # Platforms on the way out
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-    update_deb_repo "x86_64_Ubuntu16" "ubuntu" "xenial"
+if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
+    update_deb_repo "x86_64_Debian9" "debian" "stretch"
 fi
 
-update_deb_repo "x86_64_Debian9" "debian" "stretch"
 update_deb_repo "x86_64_Debian10" "debian" "buster"
 update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
 update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
 
 # Newer platforms
-if [ "${major_ver}.${minor_ver}" != "8.8" ]; then
+if [ "${major_ver}.${minor_ver}" != "9.0" ]; then
     echo No new platforms
 fi
 

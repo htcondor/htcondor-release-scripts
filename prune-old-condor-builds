@@ -1,0 +1,608 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Condor daily build pruner.
+
+Deletes daily builds (builds with a date in them) older than a certain number
+of days.  Never deletes all builds in a set, i.e. keeps at least one Windows
+64-bit .msi, at least one 64-bit CentOS 7 stripped tarball, etc.
+
+By default, asks for confirmation before deleting files; pass -y to skip
+confirmation (needed when running non-interactively).
+
+By default, renames files to add a .bak extension instead of deleting them
+(existing .bak files will be overwritten); pass --no-backup to just delete.
+
+"""
+import argparse
+import os
+import pwd
+import re
+import shlex
+import socket
+import sys
+import tempfile
+import traceback
+import unittest
+from collections import defaultdict, namedtuple
+from datetime import date, timedelta
+from email.mime.text import MIMEText
+from typing import Iterable, List, Optional
+from smtplib import SMTP
+
+
+TODAY = date.today()  # Overwrite this for testing
+PRUNE_EXTENSIONS = [".tar.gz", ".tar.bz2", ".tar.xz", ".rpm", ".deb", ".zip", ".msi"]
+
+
+#######################################################################
+# Unit testing {{{
+
+# dir with only one set of binaries
+test_dir1 = [
+    "condor-8.9.9-20201014-Windows-x64.msi",
+    "condor-8.9.9-20201014-Windows-x64.zip",
+    "condor-8.9.9-20201014-x86_64_CentOS7-stripped.tar.gz",
+    "condor-8.9.9-20201014-x86_64_CentOS7-unstripped.tar.gz",
+    "condor-8.9.9-20201014-x86_64_CentOS8-stripped.tar.gz",
+    "condor-8.9.9-20201014-x86_64_CentOS8-unstripped.tar.gz",
+    "sha256sum.txt",
+    "sha256sum.txt.gpg",
+]
+
+# also including a newer set of binaries
+test_dir2 = test_dir1 + [
+    "condor-8.9.9-20201114-Windows-x64.msi",
+    "condor-8.9.9-20201114-Windows-x64.zip",
+    "condor-8.9.9-20201114-x86_64_CentOS7-stripped.tar.gz",
+    "condor-8.9.9-20201114-x86_64_CentOS7-unstripped.tar.gz",
+    "condor-8.9.9-20201114-x86_64_CentOS8-stripped.tar.gz",
+    "condor-8.9.9-20201114-x86_64_CentOS8-unstripped.tar.gz",
+]
+
+# also including a subset of newer binaries
+test_dir3 = test_dir2 + [
+    "condor-8.9.9-20201215-Windows-x64.msi",
+    "condor-8.9.9-20201215-Windows-x64.zip",
+]
+
+# non-current dir with multiple sets of binaries
+test_dir4 = [
+    "latest/condor-8.9.9-20201014-Windows-x64.msi",
+    "latest/condor-8.9.9-20201014-Windows-x64.zip",
+    "latest/condor-8.9.9-20201114-Windows-x64.msi",
+    "latest/condor-8.9.9-20201114-Windows-x64.zip",
+    "latest/condor-8.9.9-20201214-Windows-x64.msi",
+    "latest/condor-8.9.9-20201214-Windows-x64.zip",
+    "latest/sha256sum.txt",
+    "latest/sha256sum.txt.gpg",
+]
+
+
+class TestSelf(unittest.TestCase):
+    def test_BuildInfo_from_file(self):
+        exp_date = date(2020, 10, 14)
+        # fmt: off
+        expected = [
+            BuildInfo(groupkey="8.9.9--Windows-x64.msi", builddate=exp_date, filename="condor-8.9.9-20201014-Windows-x64.msi"),
+            BuildInfo(groupkey="8.9.9--Windows-x64.zip", builddate=exp_date, filename="condor-8.9.9-20201014-Windows-x64.zip"),
+            BuildInfo(groupkey="8.9.9--x86_64_CentOS7-stripped.tar.gz", builddate=exp_date, filename="condor-8.9.9-20201014-x86_64_CentOS7-stripped.tar.gz"),
+            BuildInfo(groupkey="8.9.9--x86_64_CentOS7-unstripped.tar.gz", builddate=exp_date, filename="condor-8.9.9-20201014-x86_64_CentOS7-unstripped.tar.gz"),
+            BuildInfo(groupkey="8.9.9--x86_64_CentOS8-stripped.tar.gz", builddate=exp_date, filename="condor-8.9.9-20201014-x86_64_CentOS8-stripped.tar.gz"),
+            BuildInfo(groupkey="8.9.9--x86_64_CentOS8-unstripped.tar.gz", builddate=exp_date, filename="condor-8.9.9-20201014-x86_64_CentOS8-unstripped.tar.gz"),
+            None,
+            None,
+        ]
+        # fmt: on
+
+        for idx, val in enumerate(test_dir1):
+            self.assertEqual(expected[idx], BuildInfo.from_filename(val))
+
+    def test_BuildLists1(self):
+        bl = BuildLists.from_filenames(test_dir1)
+        self.assertEqual(len(bl.data), 6)
+
+    def test_BuildLists2(self):
+        bl = BuildLists.from_filenames(test_dir2)
+        self.assertEqual(len(bl.data), 6)
+
+    def test_BuildLists3(self):
+        bl = BuildLists.from_filenames(test_dir3)
+        self.assertEqual(len(bl.data), 6)
+
+    def test_non_latest(self):
+        bl = BuildLists.from_filenames(test_dir3)
+        non_latest = [b.filename for b in bl.non_latest_builds()]
+        self.assertIn(
+            "condor-8.9.9-20201014-x86_64_CentOS7-stripped.tar.gz", non_latest
+        )
+
+    def test_latest(self):
+        bl = BuildLists.from_filenames(test_dir3)
+        latest = [b.filename for b in bl.latest_builds()]
+        self.assertIn("condor-8.9.9-20201114-x86_64_CentOS7-stripped.tar.gz", latest)
+
+    def test_older_than_threshold(self):
+        global TODAY
+        TODAY = date(2020, 11, 14)
+        self.assertTrue(
+            BuildInfo.from_filename(
+                "condor-8.9.9-20201014-Windows-x64.msi"
+            ).older_than_threshold(threshold_days=30.0)
+        )
+        self.assertFalse(
+            BuildInfo.from_filename(
+                "condor-8.9.9-20201014-Windows-x64.msi"
+            ).older_than_threshold(threshold_days=60.0)
+        )
+
+    def test_pruneable(self):
+        global TODAY
+        bl = BuildLists.from_filenames(test_dir3)
+        TODAY = date(2020, 12, 15)
+        pruneable1 = bl.pruneable_filenames(threshold_days=30.0)
+        TODAY = date(2020, 11, 15)
+        pruneable2 = bl.pruneable_filenames(threshold_days=30.0)
+        self.assertEqual(len(pruneable1), 8)
+        self.assertEqual(len(pruneable2), 6)
+        for pruneable in pruneable1, pruneable2:
+            self.assertNotIn("condor-8.9.9-20201215-Windows-x64.msi", pruneable)
+            self.assertNotIn(
+                "condor-8.9.9-20201114-x86_64_CentOS7-unstripped.tar.gz", pruneable
+            )
+            self.assertIn(
+                "condor-8.9.9-20201014-x86_64_CentOS7-unstripped.tar.gz", pruneable
+            )
+
+    def test_pruneable2(self):
+        global TODAY
+        bl = BuildLists.from_filenames(test_dir4)
+        TODAY = date(2020, 12, 15)
+        pruneable = bl.pruneable_filenames(threshold_days=30.0)
+        self.assertEqual(len(pruneable), 4)
+        self.assertNotIn("latest/condor-8.9.9-20201214-Windows-x64.msi", pruneable)
+        self.assertIn("latest/condor-8.9.9-20201114-Windows-x64.msi", pruneable)
+
+    def test_pruneable_in_directory(self):
+        global TODAY
+        TODAY = date(2020, 12, 15)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for testfile in test_dir3:
+                os.system("touch %s/%s" % (shlex.quote(tmpdir), shlex.quote(testfile)))
+            pruneable, latest, too_young = pruneable_in_directory(
+                tmpdir, threshold_days=30.0
+            )
+            pruneable, latest, too_young = set(pruneable), set(latest), set(too_young)
+
+            self.assertFalse(pruneable.intersection(latest.intersection(too_young)))
+            self.assertEqual(len(pruneable), 8)
+            self.assertEqual(len(latest), 6)
+            self.assertEqual(len(too_young), 0)
+            self.assertIn(
+                "%s/condor-8.9.9-20201215-Windows-x64.msi" % tmpdir,
+                latest,
+            )
+            self.assertIn(
+                "%s/condor-8.9.9-20201114-x86_64_CentOS7-unstripped.tar.gz" % tmpdir,
+                latest,
+            )
+            self.assertIn(
+                "%s/condor-8.9.9-20201014-x86_64_CentOS7-unstripped.tar.gz" % tmpdir,
+                pruneable,
+            )
+
+    def test_pruneable_in_directory2(self):
+        global TODAY
+        TODAY = date(2020, 12, 15)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for testfile in test_dir3:
+                os.system("touch %s/%s" % (shlex.quote(tmpdir), shlex.quote(testfile)))
+
+            pruneable, latest, too_young = pruneable_in_directory(
+                tmpdir, threshold_days=90.0
+            )
+            pruneable, latest, too_young = set(pruneable), set(latest), set(too_young)
+
+            self.assertFalse(pruneable.intersection(latest.intersection(too_young)))
+            self.assertEqual(len(pruneable), 0)
+            self.assertEqual(len(latest), 6)
+            self.assertEqual(len(too_young), 8)
+
+            self.assertIn(
+                "%s/condor-8.9.9-20201014-x86_64_CentOS7-unstripped.tar.gz" % tmpdir,
+                too_young,
+            )
+
+
+def self_test():
+    """Run the unit tests"""
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestSelf)
+    return not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+
+
+# }}}
+#######################################################################
+
+
+class PruneableLists(namedtuple("PruneableLists", "pruneable latest too_young")):
+    """Three lists of filenames:
+    - `pruneable` for files that fit all conditions to be OK to delete,
+    - `latest` for files that won't be deleted because they are the latest in a group of builds
+    - `too_young` for files that won't be deleted because they are not older than the threshold date
+    """
+
+    __slots__ = ()
+
+
+class BuildInfo:
+    """Contains the information for a build, extracted from the file name.
+    - builddate: build date as datetime.date object
+    - groupkey: everything else from the filename: version, platform, arch, stripped/unstripped, format, etc.
+    - filename: the filename itself
+
+    Generally you should use the from_filename() factory method, which can return None
+    if the filename is in the wrong format for a build.
+    """
+
+    def __init__(self, builddate: date, groupkey: str, filename: str):
+        self.builddate = builddate
+        self.groupkey = groupkey
+        self.filename = filename
+
+    @classmethod
+    def from_filename(cls, filename: str) -> Optional["BuildInfo"]:
+        """Factory method; parse the filename to get the info.  Will return None if
+        the filename doesn't look like a build, i.e. wrong extension, or can't be
+        parsed.
+
+        """
+        for extension in PRUNE_EXTENSIONS:
+            if filename.endswith(extension):
+                break
+        else:
+            return None
+        m = re.search(
+            r"condor-(?P<pre>\d+[.]\d+[.]\d+-)(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})(?P<post>.+)",
+            os.path.basename(filename),
+        )
+        if not m:
+            return None
+        builddate = date(
+            int(m.group("year")), int(m.group("month")), int(m.group("day"))
+        )
+        groupkey = m.group("pre") + m.group("post")
+        return cls(builddate=builddate, groupkey=groupkey, filename=filename)
+
+    def older_than_threshold(self, threshold_days: float) -> bool:
+        """Return True if this build is older than `threshold_days` days."""
+        threshold_date = TODAY - timedelta(days=threshold_days)
+        return self.builddate < threshold_date
+
+    def __eq__(self, other):
+        if not isinstance(other, BuildInfo):
+            return NotImplemented
+        return self.filename == other.filename
+
+    def __repr__(self):
+        return "BuildInfo(%r)" % self.filename
+
+    def __hash__(self):
+        return hash(repr(self))
+
+
+class BuildLists:
+
+    def __init__(self, builds: Optional[Iterable] = None):
+        builds = builds or []
+        self.data = defaultdict(list)  # type: defaultdict
+        self.add_builds(builds)
+
+    @classmethod
+    def from_filenames(cls, filenames: Iterable[str]):
+        """Convenience method: return a BuildLists from an iterable of
+        filenames instead of BuildInfo objects.
+        """
+        return cls(BuildInfo.from_filename(fn) for fn in filenames)
+
+    def add_builds(self, builds: Iterable[Optional[BuildInfo]]):
+        """Add BuildInfo objects to the lists, grouped by `groupkey`; Nones
+        (i.e. files that are not builds) are ignored.
+
+        The lists are sorted afterward, latest first.
+        """
+        for buildinfo in builds:
+            if buildinfo:
+                self.data[buildinfo.groupkey].append(buildinfo)
+        for key, buildslist in self.data.items():
+            self.data[key] = sorted(buildslist, key=lambda x: x.builddate, reverse=True)
+
+    def non_latest_builds(self) -> List[BuildInfo]:
+        """Return a list of the non-latest builds."""
+        non_latest = []  # type: List[BuildInfo]
+        for buildinfos in self.data.values():
+            if len(buildinfos) > 1:
+                non_latest.extend(buildinfos[1:])
+        return non_latest
+
+    def latest_builds(self) -> List[BuildInfo]:
+        """Return a list of the latest builds."""
+        latest = []  # type: List[BuildInfo]
+        for buildinfos in self.data.values():
+            latest.append(buildinfos[0])
+        return latest
+
+    def pruneable_filenames(self, threshold_days: float) -> List[str]:
+        """Return a list of the filenames of pruneable builds, i.e. not the latest
+        and older than `thereshold_days`.
+        """
+        return sorted(
+            build.filename
+            for build in self.non_latest_builds()
+            if build.older_than_threshold(threshold_days=threshold_days)
+        )
+
+    def latest_filenames(self) -> List[str]:
+        """Return a list of the latest filenames.  (These builds are not pruneable.)"""
+        return sorted(build.filename for build in self.latest_builds())
+
+    def too_young_filenames(self, threshold_days: float) -> List[str]:
+        """Return a list of the non-latest filenames that are newer than `threshold_days`.
+        (These builds are not pruneable.)
+        """
+        return sorted(
+            build.filename
+            for build in self.non_latest_builds()
+            if not build.older_than_threshold(threshold_days=threshold_days)
+        )
+
+
+def ask_yn(question: str, tries: int = 3) -> Optional[bool]:
+    """Ask a yes or no question; return True on yes, False on no, None if no
+    recognized input.
+    """
+    try:
+        for _ in range(tries):
+            answer = input(question).lower().lstrip()
+            if answer.startswith("n"):
+                return False
+            elif answer.startswith("y"):
+                return True
+            else:
+                print("Unrecognized answer.")
+    except EOFError:
+        print("(no input received)")
+        return None
+    return None
+
+
+def pruneable_in_directory(directory, threshold_days) -> PruneableLists:
+    """Get the lists of file paths (as a PruneableLists object) for the pruneable/latest/too young files in a directory."""
+    filenames = []  # type: List[str]
+    for basename in os.listdir(directory):
+        filepath = os.path.join(directory, basename)
+        if os.path.isfile(filepath):
+            filenames.append(filepath)
+    bls = BuildLists.from_filenames(filenames)
+    pruneable = bls.pruneable_filenames(threshold_days=threshold_days)
+    latest = bls.latest_filenames()
+    too_young = bls.too_young_filenames(threshold_days=threshold_days)
+    return PruneableLists(pruneable=pruneable, latest=latest, too_young=too_young)
+
+
+def send_email(recipients: str, subject: str, text: List[str]):
+    msg = MIMEText("\n".join(text) + "\n")
+
+    username = pwd.getpwuid(os.getuid()).pw_name
+    hostname = socket.gethostname()
+
+    msg["Subject"] = "condor daily build pruner: " + subject
+    msg["To"] = recipients
+    sender = f"{username}@{hostname}"
+    msg["From"] = sender
+    # ^^^ mypy complains if I try to use msg["From"] in smtp.sendmail, hence the indirection
+
+    smtp = SMTP("localhost")
+    smtp.sendmail(sender, recipients, msg.as_string())
+    smtp.quit()
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument("--self-test", action="store_true", help="run unit tests")
+    parser.add_argument(
+        "directories",
+        metavar="DIR",
+        type=str,
+        nargs="*",
+        help="directories to search for old builds (does nothing if no directories are specified)",
+    )
+    parser.add_argument(
+        "-t",
+        "--threshold",
+        type=float,
+        metavar="DAYS",
+        default=31,
+        help="number of days before a build is considered old enough to prune (default %(default)s)",
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="assume yes to questions -- i.e. delete without asking",
+    )
+    parser.add_argument(
+        "-n",
+        "--dry-run",
+        action="store_true",
+        help="do not delete files, just list which ones would be deleted",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="be more verbose -- print which files would be skipped and why",
+    )
+    parser.add_argument(
+        "--mail",
+        metavar="ADDRESSES",
+        help="comma-separated list of email addresses to send mail to; if omitted, no mail is sent",
+    )
+    parser.add_argument(
+        "--no-backup",
+        action="store_false",
+        dest="backup",
+        help="Do not rename pruned builds to .bak, just delete them",
+    )
+
+    args = parser.parse_args(argv[1:])
+
+    if args.self_test:
+        return self_test()
+
+    header_text = []
+    not_pruneable_text = []
+    pruneable_text = []
+    deleted_text = []
+    failed_text = []
+
+    header_text.append("Script: %s" % argv[0])
+    header_text.append("Threshold: %d days" % args.threshold)
+    header_text.append("Directories searched")
+    header_text.append("--------------------")
+    header_text.extend(args.directories)
+    header_text.append("")
+
+    try:
+        pruneable = []
+        too_young = []
+        latest = []
+        for directory in args.directories:
+            lists = pruneable_in_directory(directory, args.threshold)
+            pruneable.extend(lists.pruneable)
+            too_young.extend(lists.too_young)
+            latest.extend(lists.latest)
+
+        if args.verbose:
+            if too_young:
+                not_pruneable_text.append("Not pruneable (too young)")
+                not_pruneable_text.append("-------------------------")
+                for f in sorted(too_young):
+                    not_pruneable_text.append(f)
+                not_pruneable_text.append("")
+            if latest:
+                not_pruneable_text.append("Not pruneable (latest)")
+                not_pruneable_text.append("----------------------")
+                for f in sorted(latest):
+                    not_pruneable_text.append(f)
+                not_pruneable_text.append("")
+            print("\n".join(not_pruneable_text))
+        if pruneable:
+            pruneable_text.append("Pruneable files")
+            pruneable_text.append("---------------")
+            for f in sorted(pruneable):
+                pruneable_text.append(f)
+            pruneable_text.append("")
+            print("\n".join(pruneable_text))
+        else:
+            print("Nothing to delete.")
+            if args.mail:
+                email_text = header_text + ["\n"] + not_pruneable_text
+                send_email(args.mail, "ok; nothing to delete", email_text)
+            return 0
+
+        if args.dry_run:
+            print("Would have deleted %d files." % len(pruneable))
+            if args.mail:
+                email_text = (
+                    header_text + ["\n"] + pruneable_text + ["\n"] + not_pruneable_text
+                )
+                send_email(
+                    args.mail,
+                    "would have deleted %d files" % len(pruneable),
+                    email_text,
+                )
+            return 0
+
+        deleted = []
+        failed = []
+        if args.yes or ask_yn("Delete pruneable files (y/n)?"):
+            for f in pruneable:
+                try:
+                    if args.backup:
+                        shutil.move(f, f + ".bak")
+                    else:
+                        os.unlink(f)
+                    deleted.append(f)
+                except IOError as e:
+                    failed.append("%s (%s)" % (f, e))
+                    print("Error deleting %s: %s" % (f, e))
+        else:
+            print("Cancelled -- exiting")
+            return 0
+
+        ret = 0
+        subject = "ok; deleted %d files" % len(deleted)
+        if deleted:
+            deleted_text.append("Deleted files")
+            deleted_text.append("-------------")
+            deleted_text.extend(deleted)
+            print("Deleted %d files." % len(deleted))
+        if failed:
+            ret = 1
+            failed_text.append("Files failed to delete")
+            failed_text.append("----------------------")
+            failed_text.extend(failed)
+            print("Failed to delete %d files." % len(failed))
+            subject = "error; deleted %d files, failed to delete %d" % (
+                len(deleted),
+                len(failed),
+            )
+
+        if args.mail:
+            email_text = (
+                header_text
+                + ["\n"]
+                + deleted_text
+                + ["\n"]
+                + failed_text
+                + ["\n"]
+                + not_pruneable_text
+            )
+            send_email(
+                args.mail,
+                subject,
+                email_text,
+            )
+
+        return ret
+
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except Exception as e:
+        if args.mail:
+            email_text = (
+                ["Traceback:", traceback.format_exc()]
+                + ["\n"]
+                + header_text
+                + ["\n"]
+                + deleted_text
+                + ["\n"]
+                + failed_text
+                + ["\n"]
+                + pruneable_text
+                + ["\n"]
+                + not_pruneable_text
+            )
+            send_email(
+                args.mail,
+                "DIED with exception %s" % e,
+                email_text,
+            )
+        raise
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

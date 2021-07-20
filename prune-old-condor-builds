@@ -403,7 +403,7 @@ def send_email(recipients: str, subject: str, text: List[str]):
     # ^^^ mypy complains if I try to use msg["From"] in smtp.sendmail, hence the indirection
 
     smtp = SMTP("localhost")
-    smtp.sendmail(sender, recipients, msg.as_string())
+    smtp.sendmail(sender, recipients.split(","), msg.as_string())
     smtp.quit()
 
 

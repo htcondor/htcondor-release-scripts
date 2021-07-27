@@ -76,7 +76,7 @@ fi
 killall gpg-agent
 eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
 
-win64=8
+win64=10
 macosx=15
 
 ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
@@ -253,10 +253,9 @@ update_deb_repo () {
 
     if ! $(aptly repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
         aptly repo create --distribution=$code_name $deb_repo_name-$code_name
-        # If we just created the repository, be sure to add the necessary
-        # externals
-        aptly repo add $deb_repo_name-$code_name /nobackup/tim/externals/${platform_name}
     fi
+    # Be sure to add the necessary externals
+    aptly repo add $deb_repo_name-$code_name /nobackup/tim/externals/${platform_name}
     aptly repo add $deb_repo_name-$code_name ${release}/${platform_name}
 
     if $(aptly publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then

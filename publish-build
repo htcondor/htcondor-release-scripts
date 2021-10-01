@@ -23,7 +23,13 @@ major_ver=${version[0]}
 minor_ver=${version[1]}
 patch_ver=${version[2]}
 version=$1
-repo_version="${major_ver}.${minor_ver}"
+
+repo_version="${major_ver}.1"
+if [ $minor_ver = '0' ]; then
+    repo_version="${major_ver}.${minor_ver}"
+fi
+
+echo ${repo_version}
 
 build_id=$2
 
@@ -265,7 +271,7 @@ update_deb_repo () {
     fi
 }
 
-deb_repo_name=${major_ver}.${minor_ver}
+deb_repo_name=${repo_version}
 if [ $repo != 'release' ]; then
     deb_repo_name=${deb_repo_name}-${repo}
 

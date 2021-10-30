@@ -1,43 +1,47 @@
 #!/bin/bash
-# Usage: publish-release 8.x.y build-id (release, rc, daily, fips)
-
 
 batlab='condorauto@batlab.chtc.wisc.edu'
 
 usage() {
-    echo "Usage: $(basename $0) version build_id repo build_date"
+    echo "Usage: $(basename $0) area version build_id repo build_date"
     echo
+    echo area examples: public private test
     echo version examples: 8.8.2, 8.9.1
     echo build_id example: 543234
-    echo repo examples: release, rc, daily, fips, etc
+    echo repo examples: release, rc, update, daily, fips, etc
     echo build_date example: 20201019
 
 }
-if [ $# -ne 4 ]; then
+if [ $# -ne 5 ]; then
     usage
     exit 1
 fi
 
-version=(${1//./ })
+area=$1
+suffix="-${area}"
+if [ $area = 'release' ]; then
+    suffix=""
+fi
+aptly="aptly -config=$(dirname $0)/aptly${suffix}.conf"
+
+version=(${2//./ })
 major_ver=${version[0]}
 minor_ver=${version[1]}
 patch_ver=${version[2]}
-version=$1
+version=$2
 
 repo_version="${major_ver}.1"
 if [ $minor_ver = '0' ]; then
-    repo_version="${major_ver}.${minor_ver}"
+    repo_version="${major_ver}.0"
 fi
 
-echo ${repo_version}
+build_id=$3
 
-build_id=$2
+repo=$4
 
-repo=$3
+build_date="-${5}"
 
-build_date="-${4}"
-
-echo "Version: ${version}, Build ID: ${build_id}, Repo: ${repo}, Build Date: ${4}"
+echo "Area: ${1}, Version: ${version}, Build ID: ${build_id}, Repo: ${repo}, Build Date: ${5}"
 
 read -p "Continue? " -n 1 -r
 echo
@@ -91,9 +95,10 @@ rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
 
 files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
 
-release="/tmp/condor_${version}-${build_id}/public"
-tarball="/p/condor/public/html/htcondor/tarball/${repo_version}/${version}/${repo}"
-repository="/p/condor/public/html/htcondor/repo"
+base="/tmp/condor_${version}-${build_id}"
+release="${base}/public"
+tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
+repository="/p/condor/public/html/htcondor/repo${suffix}"
 
 if [ $files -eq 0 ]; then
     echo Version mismatch!
@@ -238,8 +243,8 @@ drop_deb_publish () {
     distro=$1
     code_name=$2
 
-    if $(aptly publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
-        aptly publish drop $code_name $distro/$deb_repo_name
+    if $(${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
+        ${aptly} publish drop $code_name $distro/$deb_repo_name
     fi
 }
 
@@ -247,8 +252,8 @@ drop_deb_repo () {
     distro=$1
     code_name=$2
 
-    if $(aptly repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
-        aptly repo drop $deb_repo_name-$code_name
+    if $(${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
+        ${aptly} repo drop $deb_repo_name-$code_name
     fi
 }
 
@@ -257,17 +262,17 @@ update_deb_repo () {
     distro=$2
     code_name=$3
 
-    if ! $(aptly repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
-        aptly repo create --distribution=$code_name $deb_repo_name-$code_name
+    if ! $(${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
+        ${aptly} repo create --distribution=$code_name $deb_repo_name-$code_name
     fi
     # Be sure to add the necessary externals
-    aptly repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
-    aptly repo add $deb_repo_name-$code_name ${release}/${platform_name}
+    ${aptly} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
+    ${aptly} repo add $deb_repo_name-$code_name ${release}/${platform_name}
 
-    if $(aptly publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
-        aptly publish update -gpg-key=$key $code_name $distro/$deb_repo_name
+    if $(${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
+        ${aptly} publish update -gpg-key=$key $code_name $distro/$deb_repo_name
     else
-        aptly publish repo -gpg-key=$key $deb_repo_name-$code_name $distro/$deb_repo_name
+        ${aptly} publish repo -gpg-key=$key $deb_repo_name-$code_name $distro/$deb_repo_name
     fi
 }
 
@@ -307,7 +312,7 @@ if [ $repo != 'release' ]; then
         echo No new platforms
     fi
 
-    aptly db cleanup
+    ${aptly} db cleanup
 fi
 
 echo "Updating published repostories"
@@ -326,20 +331,20 @@ if [ "${major_ver}.${minor_ver}" != "9.0" ]; then
 fi
 
 # Put the new files in the pool
-rsync -av /nobackup/tim/aptly/public/debian/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo/debian/${deb_repo_name}/
+rsync -av /nobackup/tim/aptly${suffix}/public/debian/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo${suffix}/debian/${deb_repo_name}/
 # Update the dists to point to the new files
-rsync -av /nobackup/tim/aptly/public/debian/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo/debian/${deb_repo_name}/
+rsync -av /nobackup/tim/aptly${suffix}/public/debian/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo${suffix}/debian/${deb_repo_name}/
 # Delete any old files
-rsync -av --delete /nobackup/tim/aptly/public/debian/${deb_repo_name} /p/condor/public/html/htcondor/repo/debian/
+rsync -av --delete /nobackup/tim/aptly${suffix}/public/debian/${deb_repo_name} /p/condor/public/html/htcondor/repo${suffix}/debian/
 
 # Put the new files in the pool
-rsync -av /nobackup/tim/aptly/public/ubuntu/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo/ubuntu/${deb_repo_name}/
+rsync -av /nobackup/tim/aptly${suffix}/public/ubuntu/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo${suffix}/ubuntu/${deb_repo_name}/
 # Update the dists to point to the new files
-rsync -av /nobackup/tim/aptly/public/ubuntu/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo/ubuntu/${deb_repo_name}/
+rsync -av /nobackup/tim/aptly${suffix}/public/ubuntu/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo${suffix}/ubuntu/${deb_repo_name}/
 # Delete any old files
-rsync -av --delete /nobackup/tim/aptly/public/ubuntu/${deb_repo_name} /p/condor/public/html/htcondor/repo/ubuntu/
+rsync -av --delete /nobackup/tim/aptly${suffix}/public/ubuntu/${deb_repo_name} /p/condor/public/html/htcondor/repo${suffix}/ubuntu/
 
 
 # Clean up temp space
 echo Clean up temp space
-rm -rf ${release}
+rm -rf ${base}

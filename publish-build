@@ -8,7 +8,7 @@ usage() {
     echo area examples: public private test
     echo version examples: 8.8.2, 8.9.1
     echo build_id example: 543234
-    echo repo examples: release, rc, update, daily, fips, etc
+    echo repo examples: release, rc, update, daily
     echo build_date example: 20201019
 
 }
@@ -19,7 +19,7 @@ fi
 
 area=$1
 suffix="-${area}"
-if [ $area = 'release' ]; then
+if [ $area = 'public' ]; then
     suffix=""
 fi
 aptly="aptly -config=$(dirname $0)/aptly${suffix}.conf"
@@ -79,10 +79,6 @@ if [ $repo = 'release' ]; then
     build_date=""
 fi
 
-if [ $repo = 'private' ]; then
-    build_date=""
-fi
-
 killall gpg-agent
 eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
 
@@ -98,13 +94,14 @@ files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\*
 base="/tmp/condor_${version}-${build_id}"
 release="${base}/public"
 tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
+tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
 repository="/p/condor/public/html/htcondor/repo${suffix}"
 
 if [ $files -eq 0 ]; then
     echo Version mismatch!
     ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
     echo Clean up temp space
-    rm -rf ${release}
+    rm -rf ${base}
     exit 1
 fi
 
@@ -137,11 +134,11 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
     ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
     echo Clean up temp space
-    rm -rf ${release}
+    rm -rf ${base}
     exit 1
 fi
 
-if [ $repo = 'release' ]; then
+if [ $repo = 'release' -a $area != 'test' ]; then
     ssh $batlab nmi_pin --days=365 --force ${build_id}
 else
     ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
@@ -151,6 +148,7 @@ fi
 echo Publish tarballs...
 # rm -rf ${tarball}
 mkdir -p ${tarball}
+mkdir -p ${tarball_current}
 
 platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian10 x86_64_Ubuntu18 x86_64_Ubuntu20"
 if [ $repo = 'daily' ]; then
@@ -166,19 +164,35 @@ for platform in $platforms; do
     echo ======= $platform =======
     mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
+    if [ $repo = 'release' ]; then
+        ln -sf ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
+            ${tarball_current}/condor-${platform}-stripped.tar.gz
+    fi
 done
 
 echo ======= x86_64_MacOSX =======
 mv ${release}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
    ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
+if [ $repo = 'release' ]; then
+    ln -sf ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
+        ${tarball_current}/condor-x86_64_MacOSX-stripped.tar.gz
+fi
 
 
 echo ======= x86_64_Windows =======
 mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
    ${tarball}/condor-${version}${build_date}-Windows-x64.zip
+if [ $repo = 'release' ]; then
+    ln -sf ../${version}/release/condor-${version}-Windows-x64.zip \
+        ${tarball_current}/condor-Windows-x64.zip
+fi
 
 mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
    ${tarball}/condor-${version}${build_date}-Windows-x64.msi
+if [ $repo = 'release' ]; then
+    ln -sf ../${version}/release/condor-${version}-Windows-x64.msi \
+        ${tarball_current}/condor-Windows-x64.msi
+fi
 
 # Copy source tarball from most earliest Debian build
 if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
@@ -188,11 +202,19 @@ else
 fi
 cp -p ${release}/${src_platform}/condor_${version}.orig.tar.gz \
       ${tarball}/condor-${version}${build_date}-src.tar.gz
+if [ $repo = 'release' ]; then
+    ln -sf ../${version}/release/condor-${version}-src.tar.gz \
+        ${tarball_current}/condor-src.tar.gz
+fi
 
 echo Sign tarballs...
 (cd ${tarball} && rm -f sha256sum.txt.gpg)
 (cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x$key sha256sum.txt)
+if [ $repo = 'release' ]; then
+    ln -sf ../${version}/release/sha256sum.txt ${tarball_current}
+    ln -sf ../${version}/release/sha256sum.txt.gpg ${tarball_current}
+fi
 
 # Move RPMs into place
 

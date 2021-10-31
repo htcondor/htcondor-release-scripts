@@ -1,22 +1,24 @@
 #!/bin/bash
-# Usage: publish-rpms rpm-directory version repo
+# Usage: publish-rpms rpm-directory area version repo
 
 usage() {
-    echo "Usage: $(basename $0) rpm-directory version repo"
+    echo "Usage: $(basename $0) input area version repo"
     echo
-    echo rpm-directory-example: /nobackup/tim/rpms
-    echo version examples: 8.8 current
-    echo repo examples: release, rc, daily, fips, etc
+    echo input example: /nobackup/tim/externals/9.1
+    echo area examples: public private test
+    echo version examples: 8.8.2, 8.9.1
+    echo repo examples: release, rc, update, daily
 
 }
-if [ $# -ne 3 ]; then
+if [ $# -ne 4 ]; then
     usage
     exit 1
 fi
 
-release=$1
-version=$2
-repo=$3
+input=$1
+area=$2
+version=$3
+repo=$4
 
 if [ ! -d $1 ]; then
     echo ERROR: no $1 directory
@@ -24,8 +26,7 @@ if [ ! -d $1 ]; then
     exit 1
 fi
 
-echo "RPM Directory: ${release}, Version: ${version}, Repo: ${repo}"
-
+echo "Input: ${input} Area: ${area}, Version: ${version}, Repo: ${repo}"
 read -p "Continue? " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
@@ -33,99 +34,62 @@ then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
 fi
 
-killall gpg-agent
-eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
-
-repository="/p/condor/public/html/htcondor/repo"
-
-#Verify downloads
-echo Checking for all platforms...
-
-# Plaforms going away
-if [ "${version}" = "8.8" ]; then
-    for platform in fc27; do
-        files=$(ls $release/*.${platform}.*.rpm 2>/dev/null | wc -l)
-        if [ $files -eq 0 ]; then
-            echo ERROR: $platform not present!
-        fi
-    done
-fi
-
-for platform in amzn2 el7 el8; do
-    files=$(ls $release/*.${platform}.*.rpm 2>/dev/null | wc -l)
-    if [ $files -eq 0 ]; then
-        echo ERROR: $platform not present!
-    fi
-done
-
-# New platforms
-if [ "${version}" != "8.8" ]; then
-    for platform in fc32; do
-        files=$(ls $release/*.${platform}.*.rpm 2>/dev/null | wc -l)
-        if [ $files -eq 0 ]; then
-            echo ERROR: $platform not present!
-        fi
-    done
-fi
-
-read -p "Continue? " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    exit 1
-fi
+. $(dirname $0)/common.sh
 
 # Move RPMs into place
 
-# Key defined in the ~/.rpmmacros file
 echo Sign RPMs...
-rpm --addsign ${release}/*.rpm
+signed=1
+while [ $signed != 0 ]; do
+   rpmsign --addsign --key-id=$key ${input}/*/*.rpm
+   signed=$?
+done
 
-update_repo() {
-    platform=$1
+update_rpm_repo() {
+    platform_name=$1
+    platform=$2
 
-    mkdir -p ${repository}/${version}/${platform}/${repo}
-    mkdir -p ${repository}/${version}/${platform}/${repo}/SRPMS
-    mkdir -p ${repository}/${version}/${platform}/${repo}/debug
+    mkdir -p ${repository}/${repo_version}/${platform}/${repo}
+    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
 
-    cp -p ${release}/*.${platform}.*.rpm \
-       ${repository}/${version}/${platform}/${repo}
+    cp -a ${input}/${platform_name}/*.rpm \
+          ${repository}/${repo_version}/${platform}/${repo}
+    mv ${repository}/${repo_version}/${platform}/${repo}/*.src.rpm \
+          ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+    mv ${repository}/${repo_version}/${platform}/${repo}/*-debug*.rpm \
+          ${repository}/${repo_version}/${platform}/${repo}/debug
 
-    echo ======= ${version}/${platform}/${repo}/SRPMS =======
-    mv ${repository}/${version}/${platform}/${repo}/*.src.rpm \
-       ${repository}/${version}/${platform}/${repo}/SRPMS
+    echo ======= ${repo_version}/${platform}/${repo}/SRPMS =======
     createrepo --update \
-       ${repository}/${version}/${platform}/${repo}/SRPMS
+        ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+    gpg --detach-sign -u 0x$key --yes --armor \
+        ${repository}/${repo_version}/${platform}/${repo}/SRPMS/repodata/repomd.xml
 
-    echo ======= ${version}/${platform}/${repo}/debug =======
-    mv ${repository}/${version}/${platform}/${repo}/*-debug*.rpm \
-       ${repository}/${version}/${platform}/${repo}/debug
+    echo ======= ${repo_version}/${platform}/${repo}/debug =======
     createrepo --update \
-       ${repository}/${version}/${platform}/${repo}/debug
+        ${repository}/${repo_version}/${platform}/${repo}/debug
+    gpg --detach-sign -u 0x$key --yes --armor \
+        ${repository}/${repo_version}/${platform}/${repo}/debug/repodata/repomd.xml
 
-    echo ======= ${version}/${platform}/${repo} =======
+    echo ======= ${repo_version}/${platform}/${repo} =======
     createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
-       ${repository}/${version}/${platform}/${repo}
+        ${repository}/${repo_version}/${platform}/${repo}
+    gpg --detach-sign -u 0x$key --yes --armor \
+        ${repository}/${repo_version}/${platform}/${repo}/repodata/repomd.xml
 }
 
-# Platforms on the way out
-if [ "${version}" = "8.8" ]; then
-
-    if [ $repo = 'daily' ]; then
-        update_repo "fc27"
+echo ======= Updating ${repository} =======
+pushd ${input}
+for dir in *; do
+    if [ $dir = 'x86_64_AmazonLinux2' ]; then
+        update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
+    elif [ $dir = 'x86_64_CentOS7' ]; then
+        update_rpm_repo "x86_64_CentOS7" "el7"
+    elif [ $dir = 'x86_64_CentOS8' ]; then
+        update_rpm_repo "x86_64_CentOS8" "el8"
+    elif [ $dir = 'x86_64_Fedora32' ]; then
+        update_rpm_repo "x86_64_Fedora32" "fc32"
     fi
-
-fi
-
-update_repo "amzn2"
-update_repo "el7"
-update_repo "el8"
-
-# Newer platforms
-if [ "${version}" != "8.8" ]; then
-
-    if [ $repo = 'daily' ]; then
-        update_repo "fc32"
-    fi
-
-fi
+done
+popd ${input}

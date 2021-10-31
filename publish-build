@@ -18,27 +18,9 @@ if [ $# -ne 5 ]; then
 fi
 
 area=$1
-suffix="-${area}"
-if [ $area = 'public' ]; then
-    suffix=""
-fi
-aptly="aptly -config=$(dirname $0)/aptly${suffix}.conf"
-
-version=(${2//./ })
-major_ver=${version[0]}
-minor_ver=${version[1]}
-patch_ver=${version[2]}
 version=$2
-
-repo_version="${major_ver}.1"
-if [ $minor_ver = '0' ]; then
-    repo_version="${major_ver}.0"
-fi
-
 build_id=$3
-
 repo=$4
-
 build_date="-${5}"
 
 echo "Area: ${1}, Version: ${version}, Build ID: ${build_id}, Repo: ${repo}, Build Date: ${5}"
@@ -50,52 +32,27 @@ then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
 fi
 
-# Old key, issued 2013, 2048 bits
-key=670079F6
+. $(dirname $0)/common.sh
 
-# Stable series
-if [ $repo_version = '9.0' ]; then
-    if [ $repo = 'daily' ]; then
-        # HTCondor 9.0 Daily Key
-        key=8A314675
-    else
-        # HTCondor 9.0 Key
-        key=748E8328
-    fi
-fi
-
-# Feature serires
-if [ $repo_version = '9.1' ]; then
-    if [ $repo = 'daily' ]; then
-        # HTCondor 9.1 Daily Key
-        key=EC836AA7
-    else
-        # HTCondor 9.1 Key
-        key=6D4CA7CD
-    fi
-fi
+aptly="aptly -config=$(dirname $0)/aptly${suffix}.conf"
 
 if [ $repo = 'release' ]; then
     build_date=""
 fi
 
-killall gpg-agent
-eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
-
 win64=10
 macosx=15
+
+base="/tmp/condor_${version}-${build_id}"
+input="${base}/public"
+tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
+tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
 
 ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
 ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
 rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
 
 files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
-
-base="/tmp/condor_${version}-${build_id}"
-input="${base}/public"
-tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
-tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
-repository="/p/condor/public/html/htcondor/repo${suffix}"
 
 if [ $files -eq 0 ]; then
     echo Version mismatch!
@@ -217,51 +174,7 @@ if [ $repo = 'release' ]; then
 fi
 
 # Move RPMs into place
-
-echo Sign RPMs...
-signed=1
-while [ $signed != 0 ]; do
-   rpmsign --addsign --key-id=$key ${input}/*/*.rpm
-   signed=$?
-done
-
-update_rpm_repo() {
-    platform_name=$1
-    platform=$2
-
-    mkdir -p ${repository}/${repo_version}/${platform}/${repo}
-    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/SRPMS
-    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
-
-    echo ======= ${repo_version}/${platform}/${repo}/SRPMS =======
-    mv ${input}/${platform_name}/*.src.rpm \
-       ${repository}/${repo_version}/${platform}/${repo}/SRPMS
-    createrepo --update \
-       ${repository}/${repo_version}/${platform}/${repo}/SRPMS
-    gpg --detach-sign -u 0x$key --yes --armor \
-       ${repository}/${repo_version}/${platform}/${repo}/SRPMS/repodata/repomd.xml
-
-    echo ======= ${repo_version}/${platform}/${repo}/debug =======
-    mv ${input}/${platform_name}/*-debug*.rpm \
-       ${repository}/${repo_version}/${platform}/${repo}/debug
-    createrepo --update \
-       ${repository}/${repo_version}/${platform}/${repo}/debug
-    gpg --detach-sign -u 0x$key --yes --armor \
-       ${repository}/${repo_version}/${platform}/${repo}/debug/repodata/repomd.xml
-
-    echo ======= ${repo_version}/${platform}/${repo} =======
-    mv ${input}/${platform_name}/*.rpm \
-       ${repository}/${repo_version}/${platform}/${repo}
-    createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
-       ${repository}/${repo_version}/${platform}/${repo}
-    gpg --detach-sign -u 0x$key --yes --armor \
-       ${repository}/${repo_version}/${platform}/${repo}/repodata/repomd.xml
-}
-
-update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
-update_rpm_repo "x86_64_CentOS7" "el7"
-update_rpm_repo "x86_64_CentOS8" "el8"
-update_rpm_repo "x86_64_Fedora32" "fc32"
+$(dirname $0)/publish-rpms ${input} ${area} ${version} ${repo}
 
 # Update Debian/Ubuntu repositories
 

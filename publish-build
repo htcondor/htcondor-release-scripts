@@ -92,7 +92,7 @@ rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
 files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
 
 base="/tmp/condor_${version}-${build_id}"
-release="${base}/public"
+input="${base}/public"
 tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
 tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
 repository="/p/condor/public/html/htcondor/repo${suffix}"
@@ -111,7 +111,7 @@ echo Checking for all platforms...
 # Plaforms going away
 if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
     for platform in x86_64_Debian9; do
-        if [ ! -d ${release}/${platform} ]; then
+        if [ ! -d ${input}/${platform} ]; then
             echo ERROR: $platform not present!
         fi
     done
@@ -123,7 +123,7 @@ for platform in x86_64_AmazonLinux2 \
                 x86_64_MacOSX${macosx} \
                 x86_64_Ubuntu18 x86_64_Ubuntu20 \
                 x86_64_Windows${win64}; do
-    if [ ! -d ${release}/${platform} ]; then
+    if [ ! -d ${input}/${platform} ]; then
         echo ERROR: $platform not present!
     fi
 done
@@ -162,7 +162,7 @@ fi
 
 for platform in $platforms; do
     echo ======= $platform =======
-    mv ${release}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+    mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
     if [ $repo = 'release' ]; then
         ln -sf ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
@@ -171,7 +171,7 @@ for platform in $platforms; do
 done
 
 echo ======= x86_64_MacOSX =======
-mv ${release}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
+mv ${input}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
    ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
 if [ $repo = 'release' ]; then
     ln -sf ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
@@ -180,14 +180,14 @@ fi
 
 
 echo ======= x86_64_Windows =======
-mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
+mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
    ${tarball}/condor-${version}${build_date}-Windows-x64.zip
 if [ $repo = 'release' ]; then
     ln -sf ../${version}/release/condor-${version}-Windows-x64.zip \
         ${tarball_current}/condor-Windows-x64.zip
 fi
 
-mv ${release}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
+mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
    ${tarball}/condor-${version}${build_date}-Windows-x64.msi
 if [ $repo = 'release' ]; then
     ln -sf ../${version}/release/condor-${version}-Windows-x64.msi \
@@ -200,7 +200,7 @@ if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
 else
     src_platform="x86_64_Debian10"
 fi
-cp -p ${release}/${src_platform}/condor_${version}.orig.tar.gz \
+cp -p ${input}/${src_platform}/condor_${version}.orig.tar.gz \
       ${tarball}/condor-${version}${build_date}-src.tar.gz
 if [ $repo = 'release' ]; then
     ln -sf ../${version}/release/condor-${version}-src.tar.gz \
@@ -219,7 +219,11 @@ fi
 # Move RPMs into place
 
 echo Sign RPMs...
-rpmsign --addsign --key-id=$key ${release}/*/*.rpm
+signed=1
+while [ $signed != 0 ]; do
+   rpmsign --addsign --key-id=$key ${input}/*/*.rpm
+   signed=$?
+done
 
 update_rpm_repo() {
     platform_name=$1
@@ -230,7 +234,7 @@ update_rpm_repo() {
     mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
 
     echo ======= ${repo_version}/${platform}/${repo}/SRPMS =======
-    mv ${release}/${platform_name}/*.src.rpm \
+    mv ${input}/${platform_name}/*.src.rpm \
        ${repository}/${repo_version}/${platform}/${repo}/SRPMS
     createrepo --update \
        ${repository}/${repo_version}/${platform}/${repo}/SRPMS
@@ -238,7 +242,7 @@ update_rpm_repo() {
        ${repository}/${repo_version}/${platform}/${repo}/SRPMS/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${repo}/debug =======
-    mv ${release}/${platform_name}/*-debug*.rpm \
+    mv ${input}/${platform_name}/*-debug*.rpm \
        ${repository}/${repo_version}/${platform}/${repo}/debug
     createrepo --update \
        ${repository}/${repo_version}/${platform}/${repo}/debug
@@ -246,7 +250,7 @@ update_rpm_repo() {
        ${repository}/${repo_version}/${platform}/${repo}/debug/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${repo} =======
-    mv ${release}/${platform_name}/*.rpm \
+    mv ${input}/${platform_name}/*.rpm \
        ${repository}/${repo_version}/${platform}/${repo}
     createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
        ${repository}/${repo_version}/${platform}/${repo}
@@ -289,7 +293,7 @@ update_deb_repo () {
     fi
     # Be sure to add the necessary externals
     ${aptly} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
-    ${aptly} repo add $deb_repo_name-$code_name ${release}/${platform_name}
+    ${aptly} repo add $deb_repo_name-$code_name ${input}/${platform_name}
 
     if $(${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
         ${aptly} publish update -gpg-key=$key $code_name $distro/$deb_repo_name

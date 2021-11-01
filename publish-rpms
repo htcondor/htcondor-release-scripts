@@ -53,7 +53,7 @@ update_rpm_repo() {
     mkdir -p ${repository}/${repo_version}/${platform}/${repo}/SRPMS
     mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
 
-    cp -a ${input}/${platform_name}/*.rpm \
+    cp -a ${platform_name}/*.rpm \
           ${repository}/${repo_version}/${platform}/${repo}
     mv ${repository}/${repo_version}/${platform}/${repo}/*.src.rpm \
           ${repository}/${repo_version}/${platform}/${repo}/SRPMS

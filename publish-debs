@@ -40,28 +40,27 @@ aptly="aptly -config=$(dirname $0)/aptly${suffix}.conf"
 
 # Update Debian/Ubuntu repositories
 
-drop_deb_publish () {
+drop_deb_repo () {
     distro=$1
     code_name=$2
+
+    echo "======= Dropping ${deb_repo_name} $distro $code_name ======="
 
     if $(${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1); then
         ${aptly} publish drop $code_name $distro/$deb_repo_name
     fi
-}
-
-drop_deb_repo () {
-    distro=$1
-    code_name=$2
 
     if $(${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
         ${aptly} repo drop $deb_repo_name-$code_name
     fi
 }
 
-publish_deb_repo () {
+update_deb_repo () {
     platform_name=$1
     distro=$2
     code_name=$3
+
+    echo "======= Updating ${deb_repo_name} $distro $code_name ======="
 
     if ! $(${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1); then
         ${aptly} repo create --distribution=$code_name $deb_repo_name-$code_name
@@ -77,37 +76,39 @@ publish_deb_repo () {
     fi
 }
 
-update_deb_repo () {
-    platform_name=$1
-    distro=$2
-    code_name=$3
-
-    deb_repo_name=${repo_version}
-    if [ $repo != 'release' ]; then
-        deb_repo_name=${deb_repo_name}-${repo}
-
-        echo "======= Dropping ${deb_repo_name} $distro $code_name ======="
-        drop_deb_publish $distro $code_name
-        drop_deb_repo $distro $code_name
-        ${aptly} db cleanup
-    fi
-
-    echo "======= Updating ${deb_repo_name} $distro $code_name ======="
-    publish_deb_repo $platform_name $distro $code_name
-
-    # Put the new files in the pool
-    rsync -av /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/pool /p/condor/public/html/htcondor/repo${suffix}/${distro}/${deb_repo_name}/
-    # Update the dists to point to the new files
-    rsync -av /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/dists /p/condor/public/html/htcondor/repo${suffix}/${distro}/${deb_repo_name}/
-    # Delete any old files
-    rsync -av --delete /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name} /p/condor/public/html/htcondor/repo${suffix}/${distro}/
-
-}
-
 echo ======= Updating ${repository} =======
 pushd $input
 dirs=$(echo *)
 popd
+
+deb_repo_name=${repo_version}
+if [ $repo != 'release' ]; then
+    deb_repo_name=${deb_repo_name}-${repo}
+fi
+
+# Drop old repos for daily and rc builds
+if [ $repo = 'daily' -o $repo = 'rc' ]; then
+    for dir in $dirs; do
+        if [ $dir = 'x86_64_Debian9' ]; then
+            drop_deb_repo "debian" "stretch"
+        elif [ $dir = 'x86_64_Debian10' ]; then
+            drop_deb_repo "debian" "buster"
+        elif [ $dir = 'x86_64_Debian11' ]; then
+            drop_deb_repo "debian" "bullseye"
+        elif [ $dir = 'x86_64_Debian12' ]; then
+            drop_deb_repo "debian" "bookworm"
+        elif [ $dir = 'x86_64_Ubuntu18' ]; then
+            drop_deb_repo "ubuntu" "bionic"
+        elif [ $dir = 'x86_64_Ubuntu20' ]; then
+            drop_deb_repo "ubuntu" "focal"
+        elif [ $dir = 'x86_64_Ubuntu22' ]; then
+            drop_deb_repo "ubuntu" "jammy"
+        fi
+    done
+    ${aptly} db cleanup
+fi
+
+# Publish new packages
 for dir in $dirs; do
     if [ $dir = 'x86_64_Debian9' ]; then
         update_deb_repo "x86_64_Debian9" "debian" "stretch"
@@ -124,4 +125,14 @@ for dir in $dirs; do
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
         update_deb_repo "x86_64_Ubuntu22" "ubuntu" "jammy"
     fi
+done
+
+# Rsync up to the web server
+for distro in 'debian' 'ubuntu'; do
+    # Put the new files in the pool
+    rsync -av /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/pool ${repository}/${distro}/${deb_repo_name}/
+    # Update the dists to point to the new files
+    rsync -av /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/dists ${repository}/${distro}/${deb_repo_name}/
+    # Delete any old files
+    rsync -av --delete /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name} ${repository}/${distro}/
 done

@@ -95,8 +95,12 @@ then
     exit 1
 fi
 
-if [ $repo = 'release' -a $area != 'test' ]; then
-    ssh $batlab nmi_pin --days=365 --force ${build_id}
+if [ $repo = 'release' -o $repo = 'update' ]; then
+    if [ $area != 'test' ]; then
+        ssh $batlab nmi_pin --days=365 --force ${build_id}
+    else
+        ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
+    fi
 else
     ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
 fi

@@ -10,6 +10,13 @@ usage() {
     echo repo examples: release, rc, update, daily
 
 }
+
+confirm=1
+if [ $# -ge 1 -a "$1" = "-y" ]; then
+    confirm=0
+    shift
+fi
+
 if [ $# -ne 4 ]; then
     usage
     exit 1
@@ -21,17 +28,19 @@ version=$3
 repo=$4
 
 if [ ! -d $1 ]; then
-    echo ERROR: no $1 directory
+    echo ERROR: no directory: $1
     usage
     exit 1
 fi
 
-echo "Input: ${input} Area: ${area}, Version: ${version}, Repo: ${repo}"
-read -p "Continue? [Y/n] " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Nn]$ ]]
-then
-    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+if [ $confirm -eq 1 ]; then
+    echo "Input: ${input} Area: ${area}, Version: ${version}, Repo: ${repo}"
+    read -p "Continue? [Y/n] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]
+    then
+        [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+    fi
 fi
 
 . $(dirname $0)/common.sh

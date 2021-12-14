@@ -178,10 +178,10 @@ if [ $repo = 'release' ]; then
 fi
 
 # Move RPMs into place
-$(dirname $0)/publish-rpms ${input} ${area} ${version} ${repo}
+$(dirname $0)/publish-rpms -y ${input} ${area} ${version} ${repo}
 
 # Update Debian/Ubuntu repositories
-$(dirname $0)/publish-debs ${input} ${area} ${version} ${repo}
+$(dirname $0)/publish-debs -y ${input} ${area} ${version} ${repo}
 
 # Clean up temp space
 echo Clean up temp space

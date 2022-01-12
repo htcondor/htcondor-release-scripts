@@ -95,10 +95,10 @@ for dir in *; do
         update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
     elif [ $dir = 'x86_64_CentOS7' ]; then
         update_rpm_repo "x86_64_CentOS7" "el7"
-    elif [ $dir = 'x86_64_CentOS8' ]; then
-        update_rpm_repo "x86_64_CentOS8" "el8"
     elif [ $dir = 'x86_64_Fedora32' ]; then
         update_rpm_repo "x86_64_Fedora32" "fc32"
+    elif [ $dir = 'x86_64_Rocky8' ]; then
+        update_rpm_repo "x86_64_Rocky8" "el8"
     fi
 done
 popd ${input}

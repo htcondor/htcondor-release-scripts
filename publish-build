@@ -78,7 +78,7 @@ fi
 
 for platform in x86_64_AmazonLinux2 \
                 x86_64_CentOS7 \
-                x86_64_Debian10 x86_64_Debian11 X86_64_Debian12 \
+                x86_64_Debian10 x86_64_Debian11 x86_64_Debian12 \
                 x86_64_MacOSX${macosx} \
                 x86_64_Rocky8 \
                 x86_64_Ubuntu18 x86_64_Ubuntu20 \
@@ -112,7 +112,7 @@ echo Publish tarballs...
 mkdir -p ${tarball}
 mkdir -p ${tarball_current}
 
-platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian10 x86_64_Debian11 X86_64_Debian12 x86_64_Rocky8 x86_64_Ubuntu18 x86_64_Ubuntu20"
+platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian10 x86_64_Debian11 x86_64_Debian12 x86_64_Rocky8 x86_64_Ubuntu18 x86_64_Ubuntu20"
 if [ $repo = 'daily' ]; then
     platforms="$platforms x86_64_Fedora32"
 fi

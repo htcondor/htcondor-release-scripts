@@ -424,7 +424,7 @@ def main(argv):
         "--threshold",
         type=float,
         metavar="DAYS",
-        default=91,
+        default=31,
         help="number of days before a build is considered old enough to prune (default %(default)s)",
     )
     parser.add_argument(

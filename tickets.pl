@@ -38,10 +38,6 @@ while(<$BASE>) {
         $commit = $1;
         $base_commits{$commit}++;
     }
-    #for my $ticket (/#(\d+)/g) { # GitTrac numbers
-    #$base_tickets{$ticket}++;
-    #$commits++;
-    #}
     for my $ticket (/HTCONDOR-(\d+)/gi) { # Jira numbers
         $base_tickets{$ticket}++;
         $commits++;
@@ -59,12 +55,6 @@ while(<$STABLE>) {
         $commit = $1;
         $base_commit = $base_commits{$commit};
     }
-    #for my $ticket (/#(\d+)/g) { # GitTrac numbers
-    #if (!$base_commit) {
-    #$stable_tickets{$ticket}++;
-    #$commits++;
-    #}
-    #}
     for my $ticket (/HTCONDOR-(\d+)/gi) { # Jira numbers
         if (!$base_commit) {
             $stable_tickets{$ticket}++;
@@ -96,12 +86,6 @@ if (!$devel) {
             $commit = $1;
             $base_commit = $base_commits{$commit};
         }
-        #for my $ticket (/#(\d+)/g) { # GitTrac numbers
-        #if (!($base_commit)) {
-        #$devel_tickets{$ticket}++;
-        #$commits++;
-        #}
-        #}
         for my $ticket (/HTCONDOR-(\d+)/gi) { # Jira numbers
             if (!($base_commit)) {
                 $devel_tickets{$ticket}++;

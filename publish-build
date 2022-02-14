@@ -5,7 +5,7 @@ batlab='condorauto@batlab.chtc.wisc.edu'
 usage() {
     echo "Usage: $(basename $0) area version build_id repo build_date"
     echo
-    echo area examples: public private test
+    echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
     echo build_id example: 543234
     echo repo examples: release, rc, update, daily
@@ -111,7 +111,7 @@ else
     ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
 fi
 
-if [ $area = 'private' ]; then
+if [ $area = 'private' -o $area = 'security' ]; then
     # Suppress sources for private (security) builds
     echo "Removing sources from private release"
     find $input -name \*.orig.tar.gz -print -exec rm -f {} +

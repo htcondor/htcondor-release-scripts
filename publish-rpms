@@ -5,7 +5,7 @@ usage() {
     echo "Usage: $(basename $0) input area version repo"
     echo
     echo input example: /nobackup/tim/externals/9.1
-    echo area examples: public private test
+    echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
     echo repo examples: release, rc, update, daily
 

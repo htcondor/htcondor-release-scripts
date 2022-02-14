@@ -42,7 +42,6 @@ while(<$BASE>) {
         $base_tickets{$ticket}++;
         $commits++;
     }
-    next;
 }
 close($BASE);
 print "Processed $commits commits with ticket numbers\n\n";
@@ -61,7 +60,6 @@ while(<$STABLE>) {
             $commits++;
         }
     }
-    next;
 }
 close($STABLE);
 print "Processed $commits commits with ticket numbers\n\n";
@@ -92,7 +90,6 @@ if (!$devel) {
                 $commits++;
             }
         }
-        next;
     }
     close($DEVEL);
     print "Processed $commits commits with ticket numbers\n\n";

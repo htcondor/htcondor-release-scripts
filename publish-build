@@ -138,7 +138,7 @@ mkdir -p ${tarball}
 mkdir -p ${tarball_current}
 
 # These are Linux plaforms. Mac and Window platform are handled specially.
-platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian10 x86_64_Debian11 x86_64_x86_64_Fedora32 x86_64_Rocky8 x86_64_Ubuntu18 x86_64_Ubuntu20"
+platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian10 x86_64_Debian11 x86_64_Fedora32 x86_64_Rocky8 x86_64_Ubuntu18 x86_64_Ubuntu20"
 
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "9.0" ]; then

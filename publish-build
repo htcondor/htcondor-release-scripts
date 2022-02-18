@@ -111,6 +111,12 @@ else
     ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
 fi
 
+# Move tarballs into place
+echo Publish tarballs...
+# rm -rf ${tarball}
+mkdir -p ${tarball}
+mkdir -p ${tarball_current}
+
 if [ $area = 'private' -o $area = 'security' ]; then
     # Suppress sources for private (security) builds
     echo "Removing sources from private release"
@@ -130,12 +136,6 @@ else
             ${tarball_current}/condor-src.tar.gz
     fi
 fi
-
-# Move tarballs into place
-echo Publish tarballs...
-# rm -rf ${tarball}
-mkdir -p ${tarball}
-mkdir -p ${tarball_current}
 
 # These are Linux plaforms. Mac and Window platform are handled specially.
 platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian10 x86_64_Debian11 x86_64_Fedora32 x86_64_Rocky8 x86_64_Ubuntu18 x86_64_Ubuntu20"

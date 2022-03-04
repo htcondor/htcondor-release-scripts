@@ -47,6 +47,12 @@ fi
 
 # Move RPMs into place
 
+# Small shadow for 8.8
+if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
+    echo Repackage for small shadow...
+    (cd ${input} && 32bit-debuginfo $(pwd))
+fi
+
 echo Sign RPMs...
 signed=1
 while [ $signed != 0 ]; do

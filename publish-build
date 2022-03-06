@@ -17,6 +17,12 @@ if [ $# -ne 5 ]; then
     exit 1
 fi
 
+tcsymlink() {
+    if [ -f ${tarball_current}/$1 ]; then
+        ln -sf $1 $2
+    fi
+}
+
 area=$1
 version=$2
 build_id=$3
@@ -132,7 +138,7 @@ else
     cp -p ${input}/${src_platform}/condor_${version}.orig.tar.gz \
           ${tarball}/condor-${version}${build_date}-src.tar.gz
     if [ $repo = 'release' ]; then
-        ln -sf ../${version}/release/condor-${version}-src.tar.gz \
+        tcsymlink ../${version}/release/condor-${version}-src.tar.gz \
             ${tarball_current}/condor-src.tar.gz
     fi
 fi
@@ -150,7 +156,7 @@ for platform in $platforms; do
     mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
     if [ $repo = 'release' ]; then
-        ln -sf ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
+        tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
             ${tarball_current}/condor-${platform}-stripped.tar.gz
     fi
 done
@@ -159,7 +165,7 @@ echo ======= x86_64_MacOSX =======
 mv ${input}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
    ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
 if [ $repo = 'release' ]; then
-    ln -sf ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
+    tcsymlink ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
         ${tarball_current}/condor-x86_64_MacOSX-stripped.tar.gz
 fi
 
@@ -168,14 +174,14 @@ echo ======= x86_64_Windows =======
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
    ${tarball}/condor-${version}${build_date}-Windows-x64.zip
 if [ $repo = 'release' ]; then
-    ln -sf ../${version}/release/condor-${version}-Windows-x64.zip \
+    tcsymlink ../${version}/release/condor-${version}-Windows-x64.zip \
         ${tarball_current}/condor-Windows-x64.zip
 fi
 
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
    ${tarball}/condor-${version}${build_date}-Windows-x64.msi
 if [ $repo = 'release' ]; then
-    ln -sf ../${version}/release/condor-${version}-Windows-x64.msi \
+    tcsymlink ../${version}/release/condor-${version}-Windows-x64.msi \
         ${tarball_current}/condor-Windows-x64.msi
 fi
 
@@ -184,8 +190,8 @@ echo Sign tarballs...
 (cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x$key sha256sum.txt)
 if [ $repo = 'release' ]; then
-    ln -sf ../${version}/release/sha256sum.txt ${tarball_current}
-    ln -sf ../${version}/release/sha256sum.txt.gpg ${tarball_current}
+    tcsymlink ../${version}/release/sha256sum.txt ${tarball_current}
+    tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
 fi
 
 # Move RPMs into place

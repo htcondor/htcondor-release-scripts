@@ -10,9 +10,17 @@ major_ver=${aversion[0]}
 minor_ver=${aversion[1]}
 patch_ver=${aversion[2]}
 
-repo_version="${major_ver}.1"
-if [ $minor_ver = '0' ]; then
-    repo_version="${major_ver}.0"
+# 8.8 and before
+repo_version="${major_ver}.${minor_ver}"
+if [ $major_ver -eq 9 ]; then
+    if [ $minor_ver -ne 0 ]; then
+        repo_version="${major_ver}.1"
+    fi
+fi
+if [ $major_ver -ge 10 ]; then
+    if [ $minor_ver -ne 0 ]; then
+        repo_version="${major_ver}.x"
+    fi
 fi
 
 # Old key, issued 2013, 2048 bits

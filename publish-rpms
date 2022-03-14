@@ -33,8 +33,8 @@ if [ ! -d $1 ]; then
     exit 1
 fi
 
+echo "Input: ${input} Area: ${area}, Version: ${version}, Repo: ${repo}"
 if [ $confirm -eq 1 ]; then
-    echo "Input: ${input} Area: ${area}, Version: ${version}, Repo: ${repo}"
     read -p "Continue? [Y/n] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]
@@ -99,6 +99,10 @@ pushd ${input}
 for dir in *; do
     if [ $dir = 'x86_64_AmazonLinux2' ]; then
         update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
+    elif [ $dir = 'x86_CentOS6' ]; then
+        update_rpm_repo "x86_CentOS6" "el6"
+    elif [ $dir = 'x86_64_CentOS6' ]; then
+        update_rpm_repo "x86_64_CentOS6" "el6"
     elif [ $dir = 'x86_64_CentOS7' ]; then
         update_rpm_repo "x86_64_CentOS7" "el7"
     elif [ $dir = 'x86_64_Fedora32' ]; then

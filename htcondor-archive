@@ -1,0 +1,44 @@
+#!/bin/bash
+if [ "$#" != 1 ]; then
+    echo "Usage: $0 <release-number>"
+    exit 1;
+fi
+
+# The whole version number (3 numbers separated by periods)
+version="$1"
+# The first 2 numbers separated by a period
+ver=${version%.[0-9]*}
+# The middle number, odd is development, even is stable
+rs=${ver#[0-9]*.}
+
+series='development'
+if [ $rs == 0 -o $rs -eq 2 -o $rs -eq 4 -o $rs -eq 6 -o $rs -eq 8 ]; then
+    series='stable'
+fi
+
+rm -rf /tmp/$version
+
+if [ -d /tmp/$version ]; then
+    echo "/tmp/$version already exists!"
+    exit 1
+fi
+
+mkdir /tmp/$version
+mkdir /tmp/$version/manual
+mkdir /tmp/$version/downloads
+mkdir /tmp/$version/yum
+mkdir /tmp/$version/debian
+mkdir /tmp/$version/ubuntu
+
+echo Copying Manual...
+cp -pr /p/condor/public/html/htcondor/manual/v$version /tmp/$version/manual
+echo Copying Downloads...
+cp -pr /p/condor/public/binaries/v$ver/$version /tmp/$version/downloads
+echo Copying RPMs from yum repository...
+(cd /p/condor/public/html/htcondor/yum/$series; tar cf - $(find -name \*$version\*) | (cd /tmp/$version/yum; tar xfp -))
+echo Copying debs from debian repository...
+(cd /p/condor/public/html/htcondor/debian/$ver; tar cf - $(find -name \*$version\*) | (cd /tmp/$version/debian; tar xfp -))
+echo Copying debs from ubuntu repository...
+(cd /p/condor/public/html/htcondor/ubuntu/$ver; tar cf - $(find -name \*$version\*) | (cd /tmp/$version/ubuntu; tar xfp -))
+
+du -shx /tmp/$version/*

@@ -63,52 +63,55 @@ done
 update_rpm_repo() {
     platform_name=$1
     platform=$2
+    arch=$3
 
-    mkdir -p ${repository}/${repo_version}/${platform}/${repo}
-    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/SRPMS
-    mkdir -p ${repository}/${repo_version}/${platform}/${repo}/debug
+    mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}
+    mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
+    mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug
 
     cp -a ${platform_name}/*.rpm \
-          ${repository}/${repo_version}/${platform}/${repo}
-    mv ${repository}/${repo_version}/${platform}/${repo}/*.src.rpm \
-          ${repository}/${repo_version}/${platform}/${repo}/SRPMS
-    mv ${repository}/${repo_version}/${platform}/${repo}/*-debug*.rpm \
-          ${repository}/${repo_version}/${platform}/${repo}/debug
+          ${repository}/${repo_version}/${platform}/${arch}/${repo}
+    mv ${repository}/${repo_version}/${platform}/${arch}/${repo}/*.src.rpm \
+          ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
+    mv ${repository}/${repo_version}/${platform}/${arch}/${repo}/*-debug*.rpm \
+          ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug
 
-    echo ======= ${repo_version}/${platform}/${repo}/SRPMS =======
+    echo ======= ${repo_version}/${platform}/${arch}/${repo}/SRPMS =======
     createrepo --update \
-        ${repository}/${repo_version}/${platform}/${repo}/SRPMS
+        ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
     gpg --detach-sign -u 0x$key --yes --armor \
-        ${repository}/${repo_version}/${platform}/${repo}/SRPMS/repodata/repomd.xml
+        ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS/repodata/repomd.xml
 
-    echo ======= ${repo_version}/${platform}/${repo}/debug =======
+    echo ======= ${repo_version}/${platform}/${arch}/${repo}/debug =======
     createrepo --update \
-        ${repository}/${repo_version}/${platform}/${repo}/debug
+        ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug
     gpg --detach-sign -u 0x$key --yes --armor \
-        ${repository}/${repo_version}/${platform}/${repo}/debug/repodata/repomd.xml
+        ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug/repodata/repomd.xml
 
-    echo ======= ${repo_version}/${platform}/${repo} =======
+    echo ======= ${repo_version}/${platform}/${arch}/${repo} =======
     createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
-        ${repository}/${repo_version}/${platform}/${repo}
+        ${repository}/${repo_version}/${platform}/${arch}/${repo}
     gpg --detach-sign -u 0x$key --yes --armor \
-        ${repository}/${repo_version}/${platform}/${repo}/repodata/repomd.xml
+        ${repository}/${repo_version}/${platform}/${arch}/${repo}/repodata/repomd.xml
 }
 
 echo ======= Updating ${repository} =======
 pushd ${input}
 for dir in *; do
-    if [ $dir = 'x86_64_AmazonLinux2' ]; then
-        update_rpm_repo "x86_64_AmazonLinux2" "amzn2"
-    elif [ $dir = 'x86_CentOS6' ]; then
-        update_rpm_repo "x86_CentOS6" "el6"
-    elif [ $dir = 'x86_64_CentOS6' ]; then
-        update_rpm_repo "x86_64_CentOS6" "el6"
+    if [ $dir = 'aarch64_AlmaLinux8' ]; then
+        update_rpm_repo "aarch64_AlmaLinux8" "el8" "aarch64"
+    elif [ $dir = 'ppc64le_AlmaLinux8' ]; then
+        update_rpm_repo "ppc64le_AlmaLinux8" "el8" "ppc64le"
+    elif [ $dir = 'x86_64_AlmaLinux8' ]; then
+        update_rpm_repo "x86_64_AlmaLinux8" "el8" "x86_64"
+    elif [ $dir = 'x86_64_AmazonLinux2' ]; then
+        update_rpm_repo "x86_64_AmazonLinux2" "amzn2" "x86_64"
     elif [ $dir = 'x86_64_CentOS7' ]; then
-        update_rpm_repo "x86_64_CentOS7" "el7"
+        update_rpm_repo "x86_64_CentOS7" "el7" "x86_64"
     elif [ $dir = 'x86_64_Fedora32' ]; then
-        update_rpm_repo "x86_64_Fedora32" "fc32"
+        update_rpm_repo "x86_64_Fedora32" "fc32" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
-        update_rpm_repo "x86_64_Rocky8" "el8"
+        update_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     fi
 done
 popd ${input}

@@ -6,6 +6,8 @@ fi
 
 # The whole version number (3 numbers separated by periods)
 version="$1"
+. $(dirname $0)/common.sh
+
 # The first 2 numbers separated by a period
 ver=${version%.[0-9]*}
 # The middle number, odd is development, even is stable

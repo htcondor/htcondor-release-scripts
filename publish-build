@@ -46,7 +46,13 @@ fi
 
 base="/tmp/condor_${version}-${build_id}"
 input="${base}/public"
-tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
+tarball_repo=$repo
+# tarball update releases go into a release directory,
+# since each version is in its own directory
+if [ "$repo" = "update" ]; then
+    tarball_repo="release"
+fi
+tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${tarball_repo}"
 tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
 
 ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
@@ -130,7 +136,7 @@ else
     fi
     cp -p ${input}/${src_platform}/condor_${version}.orig.tar.gz \
           ${tarball}/condor-${version}${build_date}-src.tar.gz
-    if [ $repo = 'release' ]; then
+    if [ $tarball_repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-src.tar.gz \
                   ${tarball_current}/condor-src.tar.gz
     fi
@@ -144,7 +150,7 @@ for platform in $platforms; do
         ln -sf condor-${version}${build_date}-${platform}-stripped.tar.gz \
                ${tarball}/condor-${version}${build_date}-x86_64_CentOS8-stripped.tar.gz
     fi
-    if [ $repo = 'release' ]; then
+    if [ $tarball_repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
                   ${tarball_current}/condor-${platform}-stripped.tar.gz
         if [ $platform = 'x86_64_Rocky8' ]; then
@@ -157,7 +163,7 @@ done
 echo ======= x86_64_MacOSX =======
 mv ${input}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
    ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
-if [ $repo = 'release' ]; then
+if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
               ${tarball_current}/condor-x86_64_MacOSX-stripped.tar.gz
 fi
@@ -166,14 +172,14 @@ fi
 echo ======= x86_64_Windows =======
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
    ${tarball}/condor-${version}${build_date}-Windows-x64.zip
-if [ $repo = 'release' ]; then
+if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.zip \
               ${tarball_current}/condor-Windows-x64.zip
 fi
 
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
    ${tarball}/condor-${version}${build_date}-Windows-x64.msi
-if [ $repo = 'release' ]; then
+if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.msi \
               ${tarball_current}/condor-Windows-x64.msi
 fi
@@ -182,7 +188,7 @@ echo Sign tarballs...
 (cd ${tarball} && rm -f sha256sum.txt.gpg)
 (cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x$key sha256sum.txt)
-if [ $repo = 'release' ]; then
+if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/sha256sum.txt ${tarball_current}
     tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
 fi

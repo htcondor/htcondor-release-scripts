@@ -146,7 +146,7 @@ for platform in $platforms; do
     echo ======= $platform =======
     mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
-    if [ $platform = 'x86_64_Rocky8' ]; then
+    if [ $platform = 'x86_64_AlmaLinux8' -o $platform = 'x86_64_Rocky8' ]; then
         ln -sf condor-${version}${build_date}-${platform}-stripped.tar.gz \
                ${tarball}/condor-${version}${build_date}-x86_64_CentOS8-stripped.tar.gz
     fi

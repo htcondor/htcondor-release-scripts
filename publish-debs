@@ -139,6 +139,7 @@ done
 # Rsync up to the web server
 for distro in 'debian' 'ubuntu'; do
     echo "======= Updating ${repository}/${distro}/${deb_repo_name} ======="
+    mkdir -p ${repository}/${distro}/${deb_repo_name}
     # Put the new files in the pool
     rsync -av /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/pool ${repository}/${distro}/${deb_repo_name}/
     # Update the dists to point to the new files

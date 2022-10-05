@@ -3,13 +3,12 @@
 batlab='condorauto@batlab.chtc.wisc.edu'
 
 usage() {
-    echo "Usage: $(basename $0) area version build_id repo build_date"
+    echo "Usage: $(basename $0) area version build_id repo"
     echo
     echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
     echo build_id example: 543234
     echo repo examples: release, rc, update, daily
-    echo build_date example: 20201019
 
 }
 if [ $# -ne 5 ]; then
@@ -27,9 +26,8 @@ area=$1
 version=$2
 build_id=$3
 repo=$4
-build_date="-${5}"
 
-echo "Area: ${1}, Version: ${version}, Build ID: ${build_id}, Repo: ${repo}, Build Date: ${5}"
+echo "Area: ${1}, Version: ${version}, Build ID: ${build_id}, Repo: ${repo}"
 
 read -p "Continue? [Y/n] " -n 1 -r
 echo
@@ -39,10 +37,6 @@ then
 fi
 
 . $(dirname $0)/common.sh
-
-if [ $repo = 'release' -o $repo = 'update' -o $repo = 'fips' ]; then
-    build_date=""
-fi
 
 base="/tmp/condor_${version}-${build_id}"
 input="${base}/public"
@@ -106,7 +100,7 @@ if [ $missing -eq 1 ]; then
     fi
 fi
 
-if [ $repo = 'release' -o $repo = 'update' -o $repo = 'fips' ]; then
+if [ $repo = 'release' -o $repo = 'update' ]; then
     if [ $area != 'test' ]; then
         ssh $batlab nmi_pin --days=365 --force ${build_id}
     else
@@ -135,7 +129,7 @@ else
         src_platform="x86_64_Debian10"
     fi
     cp -p ${input}/${src_platform}/condor_${version}.orig.tar.gz \
-          ${tarball}/condor-${version}${build_date}-src.tar.gz
+          ${tarball}/condor-${version}-src.tar.gz
     if [ $tarball_repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-src.tar.gz \
                   ${tarball_current}/condor-src.tar.gz
@@ -145,10 +139,10 @@ fi
 for platform in $platforms; do
     echo ======= $platform =======
     mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
-       ${tarball}/condor-${version}${build_date}-${platform}-stripped.tar.gz
+       ${tarball}/condor-${version}-${platform}-stripped.tar.gz
     if [ $platform = 'x86_64_AlmaLinux8' -o $platform = 'x86_64_Rocky8' ]; then
-        ln -sf condor-${version}${build_date}-${platform}-stripped.tar.gz \
-               ${tarball}/condor-${version}${build_date}-x86_64_CentOS8-stripped.tar.gz
+        ln -sf condor-${version}-${platform}-stripped.tar.gz \
+               ${tarball}/condor-${version}-x86_64_CentOS8-stripped.tar.gz
     fi
     if [ $tarball_repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
@@ -162,7 +156,7 @@ done
 
 echo ======= x86_64_MacOSX =======
 mv ${input}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
-   ${tarball}/condor-${version}${build_date}-x86_64_MacOSX-stripped.tar.gz
+   ${tarball}/condor-${version}-x86_64_MacOSX-stripped.tar.gz
 if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
               ${tarball_current}/condor-x86_64_MacOSX-stripped.tar.gz
@@ -171,14 +165,14 @@ fi
 
 echo ======= x86_64_Windows =======
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
-   ${tarball}/condor-${version}${build_date}-Windows-x64.zip
+   ${tarball}/condor-${version}-Windows-x64.zip
 if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.zip \
               ${tarball_current}/condor-Windows-x64.zip
 fi
 
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
-   ${tarball}/condor-${version}${build_date}-Windows-x64.msi
+   ${tarball}/condor-${version}-Windows-x64.msi
 if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.msi \
               ${tarball_current}/condor-Windows-x64.msi
@@ -186,7 +180,7 @@ fi
 
 echo Sign tarballs...
 (cd ${tarball} && rm -f sha256sum.txt.gpg)
-(cd ${tarball} && sha256sum *${version}${build_date}* >> sha256sum.txt)
+(cd ${tarball} && sha256sum *${version}* > sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x$key sha256sum.txt)
 if [ $tarball_repo = 'release' ]; then
     tcsymlink ../${version}/release/sha256sum.txt ${tarball_current}

@@ -11,7 +11,7 @@ usage() {
     echo repo examples: release, rc, update, daily
 
 }
-if [ $# -ne 5 ]; then
+if [ $# -ne 4 ]; then
     usage
     exit 1
 fi

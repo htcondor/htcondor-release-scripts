@@ -23,9 +23,6 @@ if [ $major_ver -ge 10 ]; then
     fi
 fi
 
-# Old key, issued 2013, 2048 bits
-key=670079F6
-
 # Stable series
 if [ $repo_version = '9.0' ]; then
     if [ $repo = 'daily' ]; then
@@ -37,7 +34,7 @@ if [ $repo_version = '9.0' ]; then
     fi
 fi
 
-# Feature serires
+# Feature series
 if [ $repo_version = '9.1' ]; then
     if [ $repo = 'daily' ]; then
         # HTCondor 9.1 Daily Key
@@ -45,6 +42,28 @@ if [ $repo_version = '9.1' ]; then
     else
         # HTCondor 9.1 Key
         key=6D4CA7CD
+    fi
+fi
+
+# LTS series
+if [ $repo_version = '10.0' ]; then
+    if [ $repo = 'daily' ]; then
+        # HTCondor 10.0 Daily Key
+        key=8CF6700A
+    else
+        # HTCondor 10.0 Key
+        key=FEA0C7D0
+    fi
+fi
+
+# Feature series
+if [ $repo_version = '10.x' ]; then
+    if [ $repo = 'daily' ]; then
+        # HTCondor 10.x Daily Key
+        key=28D1E5B6
+    else
+        # HTCondor 10.x Key
+        key=43CDEFE7
     fi
 fi
 

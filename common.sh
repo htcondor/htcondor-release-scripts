@@ -10,7 +10,6 @@ major_ver=${aversion[0]}
 minor_ver=${aversion[1]}
 patch_ver=${aversion[2]}
 
-# 8.8 and before
 repo_version="${major_ver}.${minor_ver}"
 if [ $major_ver -eq 9 ]; then
     if [ $minor_ver -ne 0 ]; then
@@ -23,7 +22,7 @@ if [ $major_ver -ge 10 ]; then
     fi
 fi
 
-# Stable series
+# LTS series
 if [ $repo_version = '9.0' ]; then
     if [ $repo = 'daily' ]; then
         # HTCondor 9.0 Daily Key

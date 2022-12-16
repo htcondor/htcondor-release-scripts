@@ -67,7 +67,7 @@ win64=10
 macosx=15
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
-platforms="aarch64_AlmaLinux8 ppc64le_AlmaLinux8 x86_64_AlmaLinux8 x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu20"
+platforms="aarch64_AlmaLinux8 ppc64le_AlmaLinux8 x86_64_AlmaLinux8 x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu18 x86_64_Ubuntu20 x86_64_Ubuntu22"
 
 # Platforms on the way out
 if [ "${major_ver}.${minor_ver}" = "8.8" ]; then

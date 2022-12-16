@@ -63,7 +63,8 @@ if [ $files -eq 0 ]; then
     exit 1
 fi
 
-win64=10
+# Windows 9 platform is really Windows 10
+win64=9
 macosx=15
 
 # These are Linux platforms. Mac and Window platforms are handled specially.

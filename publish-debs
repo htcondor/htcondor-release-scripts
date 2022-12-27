@@ -145,5 +145,5 @@ for distro in 'debian' 'ubuntu'; do
     # Update the dists to point to the new files
     rsync -av /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/dists ${repository}/${distro}/${deb_repo_name}/
     # Delete any old files
-    rsync -av --delete /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name} ${repository}/${distro}/
+    rsync -av --delete /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/* ${repository}/${distro}/${deb_repo_name}/
 done

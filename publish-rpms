@@ -60,21 +60,10 @@ while [ $signed != 0 ]; do
    signed=$?
 done
 
-signed=1
-while [ $signed != 0 ]; do
-   rpmsign --addsign --key-id=$dsa_key ${input}/*Linux9/*.rpm
-   signed=$?
-done
-
 update_rpm_repo() {
     platform_name=$1
     platform=$2
     arch=$3
-
-    repo_key=$key
-    if [ $platform = 'el9' ]; then
-        repo_key=$dsa_key
-    fi
 
     mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}
     mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
@@ -90,19 +79,19 @@ update_rpm_repo() {
     echo ======= ${repo_version}/${platform}/${arch}/${repo}/SRPMS =======
     createrepo --update \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
-    gpg --detach-sign -u 0x$repo_key --yes --armor \
+    gpg --detach-sign -u 0x$key --yes --armor \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${arch}/${repo}/debug =======
     createrepo --update \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug
-    gpg --detach-sign -u 0x$repo_key --yes --armor \
+    gpg --detach-sign -u 0x$key --yes --armor \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${arch}/${repo} =======
     createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}
-    gpg --detach-sign -u 0x$repo_key --yes --armor \
+    gpg --detach-sign -u 0x$key --yes --armor \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/repodata/repomd.xml
 }
 

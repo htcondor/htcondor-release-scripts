@@ -56,7 +56,7 @@ fi
 echo Sign RPMs...
 signed=1
 while [ $signed != 0 ]; do
-   rpmsign --addsign --key-id=$key ${input}/*/*.rpm
+   rpmsign --addsign --digest-algo=sha256 --key-id=$key ${input}/*/*.rpm
    signed=$?
 done
 
@@ -79,19 +79,19 @@ update_rpm_repo() {
     echo ======= ${repo_version}/${platform}/${arch}/${repo}/SRPMS =======
     createrepo --update \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
-    gpg --detach-sign -u 0x$key --yes --armor \
+    gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${arch}/${repo}/debug =======
     createrepo --update \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug
-    gpg --detach-sign -u 0x$key --yes --armor \
+    gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug/repodata/repomd.xml
 
     echo ======= ${repo_version}/${platform}/${arch}/${repo} =======
     createrepo --excludes='debug/*' --excludes='SRPMS/*' --update \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}
-    gpg --detach-sign -u 0x$key --yes --armor \
+    gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor \
         ${repository}/${repo_version}/${platform}/${arch}/${repo}/repodata/repomd.xml
 }
 

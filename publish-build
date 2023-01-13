@@ -64,18 +64,18 @@ if [ $files -eq 0 ]; then
 fi
 
 # Windows 9 platform is really Windows 10
-win64=9
+win64=10
 macosx=15
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
-platforms="aarch64_AlmaLinux8 ppc64le_AlmaLinux8 x86_64_AlmaLinux8 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu18 x86_64_Ubuntu20 x86_64_Ubuntu22"
+platforms="aarch64_AlmaLinux8 aarch64_AlmaLinux9 ppc64le_AlmaLinux8 x86_64_AlmaLinux8 x86_64_AlmaLinux9 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu18 x86_64_Ubuntu20 x86_64_Ubuntu22"
 
 # Platforms on the way out
-if [ "${major_ver}.${minor_ver}" = "8.8" ]; then
-    platforms="x86_64_AmazonLinux2 x86_CentOS6 x86_64_CentOS6 x86_64_CentOS7 x86_64_CentOS8 x86_64_Debian9 x86_64_Debian10 x86_64_Fedora27 x86_64_Ubuntu18 x86_64_Ubuntu20"
-fi
 if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
     platforms="x86_64_AmazonLinux2 x86_64_CentOS7 x86_64_Debian9 x86_64_Debian10 x86_64_Debian11 x86_64_Fedora32 x86_64_Rocky8 x86_64_Ubuntu18 x86_64_Ubuntu20"
+fi
+if [ "${major_ver}.${minor_ver}" = "10.0" ]; then
+    platforms="aarch64_AlmaLinux8 ppc64le_AlmaLinux8 x86_64_AlmaLinux8 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu18 x86_64_Ubuntu20 x86_64_Ubuntu22"
 fi
 
 #Verify downloads
@@ -151,17 +151,9 @@ for platform in $platforms; do
     echo ======= $platform =======
     mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}-${platform}-stripped.tar.gz
-    if [ $platform = 'x86_64_AlmaLinux8' -o $platform = 'x86_64_Rocky8' ]; then
-        ln -sf condor-${version}-${platform}-stripped.tar.gz \
-               ${tarball}/condor-${version}-x86_64_CentOS8-stripped.tar.gz
-    fi
     if [ $tarball_repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
                   ${tarball_current}/condor-${platform}-stripped.tar.gz
-        if [ $platform = 'x86_64_Rocky8' ]; then
-            tcsymlink ../${version}/release/condor-${version}-x86_64_CentOS8-stripped.tar.gz \
-                      ${tarball_current}/condor-x86_64_CentOS8-stripped.tar.gz
-        fi
     fi
 done
 

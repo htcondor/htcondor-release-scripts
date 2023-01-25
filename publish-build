@@ -53,7 +53,10 @@ ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
 ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
 rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
 
-files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
+files=0
+if [ -d /tmp/condor_${version}-${build_id}/public ]; then
+    files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
+fi
 
 if [ $files -eq 0 ]; then
     echo Version mismatch!

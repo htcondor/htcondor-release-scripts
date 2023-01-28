@@ -135,6 +135,7 @@ else
 
     # Check for source tarball
     if [ ! -f ${input}/${src_platform}/condor_${version}.orig.tar.gz ]; then
+        echo ERROR: no source tarball
         ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
         echo Clean up temp space
         rm -rf ${base}

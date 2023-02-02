@@ -41,6 +41,7 @@ while(<$BASE>) {
     for my $ticket (/HTCONDOR-(\d+)/gi) { # Jira numbers
         $base_tickets{$ticket}++;
         $commits++;
+        # if ($ticket == 1377) {print "base: $_ \n";}
     }
 }
 close($BASE);
@@ -58,6 +59,7 @@ while(<$STABLE>) {
         if (!$base_commit) {
             $stable_tickets{$ticket}++;
             $commits++;
+            # if ($ticket == 1377) {print "stable $_ \n";}
         }
     }
 }
@@ -88,6 +90,7 @@ if (!$devel) {
             if (!($base_commit)) {
                 $devel_tickets{$ticket}++;
                 $commits++;
+                # if ($ticket == 1377) {print "devel $_ \n";}
             }
         }
     }

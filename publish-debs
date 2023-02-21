@@ -60,11 +60,15 @@ drop_deb_repo () {
         #${aptly} publish drop $code_name $distro/$deb_repo_name
     #fi
     # Drop unconditionally and swallow the error.
+    echo ${aptly} publish drop $code_name $distro/$deb_repo_name
     ${aptly} publish drop $code_name $distro/$deb_repo_name
 
-    if ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
-        ${aptly} repo drop $deb_repo_name-$code_name
-    fi
+    #if ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
+        #${aptly} repo drop $deb_repo_name-$code_name
+    #fi
+    # Drop unconditionally and swallow the error.
+    echo ${aptly} repo drop $deb_repo_name-$code_name
+    ${aptly} repo drop $deb_repo_name-$code_name
 }
 
 update_deb_repo () {

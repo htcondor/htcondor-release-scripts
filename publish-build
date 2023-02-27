@@ -68,7 +68,7 @@ fi
 
 # Windows 9 platform is really Windows 10
 win64=10
-macosx=15
+macos=11
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
 platforms="aarch64_AlmaLinux8 aarch64_AlmaLinux9 ppc64le_AlmaLinux8 x86_64_AlmaLinux8 x86_64_AlmaLinux9 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu18 x86_64_Ubuntu20 x86_64_Ubuntu22"
@@ -85,7 +85,7 @@ fi
 echo Checking for all platforms...
 missing=0
 
-for platform in $platforms x86_64_MacOSX${macosx} x86_64_Windows${win64}; do
+for platform in $platforms x86_64_macOS${macos} x86_64_Windows${win64}; do
     if [ ! -d ${input}/${platform} ]; then
         echo ERROR: $platform not present!
         missing=1
@@ -161,12 +161,12 @@ for platform in $platforms; do
     fi
 done
 
-echo ======= x86_64_MacOSX =======
-mv ${input}/x86_64_MacOSX${macosx}/condor-${version}*-x86_64_MacOSX${macosx}-stripped.tar.gz \
-   ${tarball}/condor-${version}-x86_64_MacOSX-stripped.tar.gz
+echo ======= x86_64_macOS =======
+mv ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
+   ${tarball}/condor-${version}-x86_64_macOS-stripped.tar.gz
 if [ $tarball_repo = 'release' ]; then
-    tcsymlink ../${version}/release/condor-${version}-x86_64_MacOSX-stripped.tar.gz \
-              ${tarball_current}/condor-x86_64_MacOSX-stripped.tar.gz
+    tcsymlink ../${version}/release/condor-${version}-x86_64_macOS-stripped.tar.gz \
+              ${tarball_current}/condor-x86_64_macOS-stripped.tar.gz
 fi
 
 

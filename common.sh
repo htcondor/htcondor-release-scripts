@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Ensure things are group writable
+umask 0002
+
 suffix="-${area}"
 if [ $area = 'public' ]; then
     suffix=""

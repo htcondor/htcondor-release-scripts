@@ -138,6 +138,8 @@ for dir in $dirs; do
         update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
     elif [ $dir = 'x86_64_Ubuntu20' ]; then
         update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
+    elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+        update_deb_repo "ppc64le_Ubuntu20" "ubuntu" "focal"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
         update_deb_repo "x86_64_Ubuntu22" "ubuntu" "jammy"
     fi

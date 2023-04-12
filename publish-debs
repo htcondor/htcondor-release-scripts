@@ -49,29 +49,37 @@ aptly="/nobackup/tim/bin/aptly -config=$(dirname $0)/aptly${suffix}.conf"
 
 # Update Debian/Ubuntu repositories
 
+drop_deb_publish () {
+    distro=$1
+    code_name=$2
+
+    echo "======= Dropping publish ${deb_repo_name} $distro $code_name ======="
+
+    # For some reason this can throw a stack trace on bullseye.
+    #if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
+        #${aptly} publish drop $code_name $distro/$deb_repo_name
+    #fi
+    # Drop unconditionally and ignore the error.
+    echo ${aptly} publish drop $code_name $distro/$deb_repo_name
+    ${aptly} publish drop $code_name $distro/$deb_repo_name
+}
+
 drop_deb_repo () {
     distro=$1
     code_name=$2
 
-    echo "======= Dropping ${deb_repo_name} $distro $code_name ======="
+    echo "======= Dropping repo ${deb_repo_name} $distro $code_name ======="
 
-    # For some reason this throws a stack trace on bullseye.
-    #if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
-        #${aptly} publish drop $code_name $distro/$deb_repo_name
-    #fi
-    # Drop unconditionally and swallow the error.
-    echo ${aptly} publish drop $code_name $distro/$deb_repo_name
-    ${aptly} publish drop $code_name $distro/$deb_repo_name
-
+    # For some reason this can throw a stack trace on bullseye.
     #if ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
         #${aptly} repo drop $deb_repo_name-$code_name
     #fi
-    # Drop unconditionally and swallow the error.
+    # Drop unconditionally and ignore the error.
     echo ${aptly} repo drop $deb_repo_name-$code_name
     ${aptly} repo drop $deb_repo_name-$code_name
 }
 
-update_deb_repo () {
+update_deb_repo_and_publish () {
     platform_name=$1
     distro=$2
     code_name=$3
@@ -102,6 +110,28 @@ if [ $repo != 'release' ]; then
     deb_repo_name=${deb_repo_name}-${repo}
 fi
 
+# Drop published repos
+# We drop and republish because updating will not add new CPU architectures
+for dir in $dirs; do
+    if [ $dir = 'x86_64_Debian9' ]; then
+        drop_deb_publish "debian" "stretch"
+    elif [ $dir = 'x86_64_Debian10' ]; then
+        drop_deb_publish "debian" "buster"
+    elif [ $dir = 'x86_64_Debian11' ]; then
+        drop_deb_publish "debian" "bullseye"
+    elif [ $dir = 'x86_64_Debian12' ]; then
+        drop_deb_publish "debian" "bookworm"
+    elif [ $dir = 'x86_64_Ubuntu18' ]; then
+        drop_deb_publish "ubuntu" "bionic"
+    elif [ $dir = 'x86_64_Ubuntu20' ]; then
+        drop_deb_publish "ubuntu" "focal"
+    elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+        drop_deb_publish "ubuntu" "focal"
+    elif [ $dir = 'x86_64_Ubuntu22' ]; then
+        drop_deb_publish "ubuntu" "jammy"
+    fi
+done
+
 # Drop old repos for daily and rc builds
 if [ $repo = 'daily' -o $repo = 'rc' ]; then
     for dir in $dirs; do
@@ -127,21 +157,21 @@ fi
 # Publish new packages
 for dir in $dirs; do
     if [ $dir = 'x86_64_Debian9' ]; then
-        update_deb_repo "x86_64_Debian9" "debian" "stretch"
+        update_deb_repo_and_publish "x86_64_Debian9" "debian" "stretch"
     elif [ $dir = 'x86_64_Debian10' ]; then
-        update_deb_repo "x86_64_Debian10" "debian" "buster"
+        update_deb_repo_and_publish "x86_64_Debian10" "debian" "buster"
     elif [ $dir = 'x86_64_Debian11' ]; then
-        update_deb_repo "x86_64_Debian11" "debian" "bullseye"
+        update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye"
     elif [ $dir = 'x86_64_Debian12' ]; then
-        update_deb_repo "x86_64_Debian12" "debian" "bookworm"
+        update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm"
     elif [ $dir = 'x86_64_Ubuntu18' ]; then
-        update_deb_repo "x86_64_Ubuntu18" "ubuntu" "bionic"
+        update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic"
     elif [ $dir = 'x86_64_Ubuntu20' ]; then
-        update_deb_repo "x86_64_Ubuntu20" "ubuntu" "focal"
+        update_deb_repo_and_publish "x86_64_Ubuntu20" "ubuntu" "focal"
     elif [ $dir = 'ppc64le_Ubuntu20' ]; then
-        update_deb_repo "ppc64le_Ubuntu20" "ubuntu" "focal"
+        update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
-        update_deb_repo "x86_64_Ubuntu22" "ubuntu" "jammy"
+        update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy"
     fi
 done
 

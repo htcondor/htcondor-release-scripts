@@ -53,30 +53,20 @@ drop_deb_publish () {
     distro=$1
     code_name=$2
 
-    echo "======= Dropping publish ${deb_repo_name} $distro $code_name ======="
-
-    # For some reason this can throw a stack trace on bullseye.
-    #if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
-        #${aptly} publish drop $code_name $distro/$deb_repo_name
-    #fi
-    # Drop unconditionally and ignore the error.
-    echo ${aptly} publish drop $code_name $distro/$deb_repo_name
-    ${aptly} publish drop $code_name $distro/$deb_repo_name
+    if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
+        echo "======= Dropping publish ${deb_repo_name} $distro $code_name ======="
+        ${aptly} publish drop $code_name $distro/$deb_repo_name
+    fi
 }
 
 drop_deb_repo () {
     distro=$1
     code_name=$2
 
-    echo "======= Dropping repo ${deb_repo_name} $distro $code_name ======="
-
-    # For some reason this can throw a stack trace on bullseye.
-    #if ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
-        #${aptly} repo drop $deb_repo_name-$code_name
-    #fi
-    # Drop unconditionally and ignore the error.
-    echo ${aptly} repo drop $deb_repo_name-$code_name
-    ${aptly} repo drop $deb_repo_name-$code_name
+    if ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
+        echo "======= Dropping repo ${deb_repo_name} $distro $code_name ======="
+        ${aptly} repo drop $deb_repo_name-$code_name
+    fi
 }
 
 update_deb_repo_and_publish () {
@@ -84,18 +74,26 @@ update_deb_repo_and_publish () {
     distro=$2
     code_name=$3
 
-    echo "======= Updating ${deb_repo_name} $distro $code_name ======="
 
     if ! ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
+        echo "======= Creating repo ${deb_repo_name} $distro $code_name ======="
         ${aptly} repo create --distribution=$code_name $deb_repo_name-$code_name
     fi
-    # Be sure to add the necessary externals
-    ${aptly} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
+    echo "======= Adding packages to repo ${deb_repo_name} $distro $code_name ======="
     ${aptly} repo add $deb_repo_name-$code_name ${input}/${platform_name}
+    # Be sure to add the necessary externals
+    if [ -d /nobackup/tim/externals/${repo_version}/${platform_name} ]; then
+        echo "======= Adding external packages to repo ${deb_repo_name} $distro $code_name ======="
+        ${aptly} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
+    else
+        echo "WARNING: No externals to add to repository"
+    fi
 
     if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
+        echo "======= Updating publish ${deb_repo_name} $distro $code_name ======="
         ${aptly} publish update -gpg-key=$key $code_name $distro/$deb_repo_name
     else
+        echo "======= Publishing repo ${deb_repo_name} $distro $code_name ======="
         ${aptly} publish repo -gpg-key=$key $deb_repo_name-$code_name $distro/$deb_repo_name
     fi
 }

@@ -164,12 +164,12 @@ for platform in $platforms; do
     fi
 done
 
-echo ======= x86_64_macOS =======
+echo ======= x86_64_macOS${macos} =======
 mv ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
-   ${tarball}/condor-${version}-x86_64_macOS-stripped.tar.gz
+   ${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz
 if [ $tarball_repo = 'release' ]; then
-    tcsymlink ../${version}/release/condor-${version}-x86_64_macOS-stripped.tar.gz \
-              ${tarball_current}/condor-x86_64_macOS-stripped.tar.gz
+    tcsymlink ../${version}/release/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz \
+              ${tarball_current}/condor-x86_64_macOS${macos}-stripped.tar.gz
 fi
 
 

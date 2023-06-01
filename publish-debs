@@ -159,21 +159,21 @@ fi
 # Publish new packages
 for dir in $dirs; do
     if [ $dir = 'x86_64_Debian9' ]; then
-        update_deb_repo_and_publish "x86_64_Debian9" "debian" "stretch" "amd64"
+        update_deb_repo_and_publish "x86_64_Debian9" "debian" "stretch" "amd64,source"
     elif [ $dir = 'x86_64_Debian10' ]; then
-        update_deb_repo_and_publish "x86_64_Debian10" "debian" "buster" "amd64"
+        update_deb_repo_and_publish "x86_64_Debian10" "debian" "buster" "amd64,source"
     elif [ $dir = 'x86_64_Debian11' ]; then
-        update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye" "amd64"
+        update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye" "amd64,source"
     elif [ $dir = 'x86_64_Debian12' ]; then
-        update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm" "amd64"
+        update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm" "amd64,source"
     elif [ $dir = 'x86_64_Ubuntu18' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic" "amd64"
+        update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic" "amd64,source"
     elif [ $dir = 'x86_64_Ubuntu20' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el"
+        update_deb_repo_and_publish "x86_64_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el,source"
     elif [ $dir = 'ppc64le_Ubuntu20' ]; then
-        update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el"
+        update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el,source"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy" "amd64"
+        update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy" "amd64,source"
     fi
 done
 

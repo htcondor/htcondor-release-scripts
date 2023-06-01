@@ -73,34 +73,36 @@ update_deb_repo_and_publish () {
     platform_name=$1
     distro=$2
     code_name=$3
+    arch=$4
+    aptly_arch="${aptly} -architectures=${arch}"
 
-
-    if ! ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
+    if ! ${aptly_arch} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
         echo "======= Creating repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly} repo create --distribution=$code_name $deb_repo_name-$code_name
+        ${aptly_arch} repo create -distribution=$code_name $deb_repo_name-$code_name
     fi
     echo "======= Adding packages to repo ${deb_repo_name} $distro $code_name ======="
-    ${aptly} repo add $deb_repo_name-$code_name ${input}/${platform_name}
+    ${aptly_arch} repo add $deb_repo_name-$code_name ${input}/${platform_name}
     # Be sure to add the necessary externals
     if [ -d /nobackup/tim/externals/${repo_version}/${platform_name} ]; then
         echo "======= Adding external packages to repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
+        ${aptly_arch} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
     else
         echo "WARNING: No externals to add to repository"
     fi
 
-    if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
+    if ${aptly_arch} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
         echo "======= Updating publish ${deb_repo_name} $distro $code_name ======="
-        ${aptly} publish update -gpg-key=$key $code_name $distro/$deb_repo_name
+        ${aptly_arch} publish update -gpg-key=$key $code_name $distro/$deb_repo_name
     else
         echo "======= Publishing repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly} publish repo -gpg-key=$key $deb_repo_name-$code_name $distro/$deb_repo_name
+        ${aptly_arch} publish repo -gpg-key=$key $deb_repo_name-$code_name $distro/$deb_repo_name
     fi
 }
 
 echo ======= Updating ${repository} =======
 pushd $input
-dirs=$(echo *)
+# Be sure amd64 packages take precendence
+dirs=$(echo x86_64_* ppc64le_*)
 popd
 
 deb_repo_name=${repo_version}
@@ -145,6 +147,8 @@ if [ $repo = 'daily' -o $repo = 'rc' ]; then
             drop_deb_repo "ubuntu" "bionic"
         elif [ $dir = 'x86_64_Ubuntu20' ]; then
             drop_deb_repo "ubuntu" "focal"
+        elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+            drop_deb_repo "ubuntu" "focal"
         elif [ $dir = 'x86_64_Ubuntu22' ]; then
             drop_deb_repo "ubuntu" "jammy"
         fi
@@ -155,21 +159,21 @@ fi
 # Publish new packages
 for dir in $dirs; do
     if [ $dir = 'x86_64_Debian9' ]; then
-        update_deb_repo_and_publish "x86_64_Debian9" "debian" "stretch"
+        update_deb_repo_and_publish "x86_64_Debian9" "debian" "stretch" "amd64"
     elif [ $dir = 'x86_64_Debian10' ]; then
-        update_deb_repo_and_publish "x86_64_Debian10" "debian" "buster"
+        update_deb_repo_and_publish "x86_64_Debian10" "debian" "buster" "amd64"
     elif [ $dir = 'x86_64_Debian11' ]; then
-        update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye"
+        update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye" "amd64"
     elif [ $dir = 'x86_64_Debian12' ]; then
-        update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm"
+        update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm" "amd64"
     elif [ $dir = 'x86_64_Ubuntu18' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic"
+        update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic" "amd64"
     elif [ $dir = 'x86_64_Ubuntu20' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu20" "ubuntu" "focal"
+        update_deb_repo_and_publish "x86_64_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el"
     elif [ $dir = 'ppc64le_Ubuntu20' ]; then
-        update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal"
+        update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy"
+        update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy" "amd64"
     fi
 done
 

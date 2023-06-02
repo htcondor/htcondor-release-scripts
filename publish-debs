@@ -110,30 +110,28 @@ if [ $repo != 'release' ]; then
     deb_repo_name=${deb_repo_name}-${repo}
 fi
 
-# Drop published repos
-# We drop and republish because updating will not add new CPU architectures
-for dir in $dirs; do
-    if [ $dir = 'x86_64_Debian9' ]; then
-        drop_deb_publish "debian" "stretch"
-    elif [ $dir = 'x86_64_Debian10' ]; then
-        drop_deb_publish "debian" "buster"
-    elif [ $dir = 'x86_64_Debian11' ]; then
-        drop_deb_publish "debian" "bullseye"
-    elif [ $dir = 'x86_64_Debian12' ]; then
-        drop_deb_publish "debian" "bookworm"
-    elif [ $dir = 'x86_64_Ubuntu18' ]; then
-        drop_deb_publish "ubuntu" "bionic"
-    elif [ $dir = 'x86_64_Ubuntu20' ]; then
-        drop_deb_publish "ubuntu" "focal"
-    elif [ $dir = 'ppc64le_Ubuntu20' ]; then
-        drop_deb_publish "ubuntu" "focal"
-    elif [ $dir = 'x86_64_Ubuntu22' ]; then
-        drop_deb_publish "ubuntu" "jammy"
-    fi
-done
-
 # Drop old repos for daily and rc builds
 if [ $repo = 'daily' -o $repo = 'rc' ]; then
+    for dir in $dirs; do
+        if [ $dir = 'x86_64_Debian9' ]; then
+            drop_deb_publish "debian" "stretch"
+        elif [ $dir = 'x86_64_Debian10' ]; then
+            drop_deb_publish "debian" "buster"
+        elif [ $dir = 'x86_64_Debian11' ]; then
+            drop_deb_publish "debian" "bullseye"
+        elif [ $dir = 'x86_64_Debian12' ]; then
+            drop_deb_publish "debian" "bookworm"
+        elif [ $dir = 'x86_64_Ubuntu18' ]; then
+            drop_deb_publish "ubuntu" "bionic"
+        elif [ $dir = 'x86_64_Ubuntu20' ]; then
+            drop_deb_publish "ubuntu" "focal"
+        elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+            drop_deb_publish "ubuntu" "focal"
+        elif [ $dir = 'x86_64_Ubuntu22' ]; then
+            drop_deb_publish "ubuntu" "jammy"
+        fi
+    done
+
     for dir in $dirs; do
         if [ $dir = 'x86_64_Debian9' ]; then
             drop_deb_repo "debian" "stretch"

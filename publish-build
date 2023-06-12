@@ -114,7 +114,7 @@ fi
 
 # Move tarballs into place
 echo Publish tarballs...
-# rm -rf ${tarball}
+rm -rf ${tarball}
 mkdir -p ${tarball}
 mkdir -p ${tarball_current}
 

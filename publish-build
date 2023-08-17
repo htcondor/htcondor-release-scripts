@@ -71,7 +71,7 @@ win64=9
 macos=13
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
-platforms="aarch64_AlmaLinux8 aarch64_AlmaLinux9 ppc64le_AlmaLinux8 ppc64le_Ubuntu20 x86_64_AlmaLinux8 x86_64_AlmaLinux9 x86_64_AmazonLinux2023 x86_64_CentOS7 x86_64_Debian11 x86_64_Ubuntu20 x86_64_Ubuntu22"
+platforms="aarch64_AlmaLinux8 aarch64_AlmaLinux9 ppc64le_AlmaLinux8 ppc64le_Ubuntu20 x86_64_AlmaLinux8 x86_64_AlmaLinux9 x86_64_AmazonLinux2023 x86_64_CentOS7 x86_64_Debian11 x86_64_Debian12 x86_64_Fedora38 x86_64_Ubuntu20 x86_64_Ubuntu22"
 
 # Platforms for previous versions
 if [ "${major_ver}.${minor_ver}" = "10.0" ]; then
@@ -118,9 +118,9 @@ rm -rf ${tarball}
 mkdir -p ${tarball}
 mkdir -p ${tarball_current}
 
-if [ $area = 'private' -o $area = 'security' ]; then
-    # Suppress sources for private (security) builds
-    echo "Removing sources from private release"
+if [ $area = 'security' ]; then
+    # Suppress sources for security builds
+    echo "Removing sources from security release"
     find $input -name \*.orig.tar.gz -print -exec rm -f {} +
     find $input -name \*.src.rpm -print -exec rm -f {} +
 else

@@ -32,15 +32,19 @@ mkdir /tmp/$version/yum
 mkdir /tmp/$version/debian
 mkdir /tmp/$version/ubuntu
 
+tag=$(echo $version | sed 's/\./_/g')
+
 echo Copying Manual...
-cp -pr /p/condor/public/html/htcondor/manual/v$version /tmp/$version/manual
+wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/htmlzip/ -O /tmp/$version/manual/index.html.zip
+wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/pdf/ -O /tmp/$version/manual/htcondor-${version}.pdf
+wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/epub/ -O /tmp/$version/manual/htcondor-${version}.epub
 echo Copying Downloads...
 cp -pr /p/condor/public/binaries/v$ver/$version /tmp/$version/downloads
 echo Copying RPMs from yum repository...
-(cd /p/condor/public/html/htcondor/yum/$series; tar cf - $(find -name \*$version\*) | (cd /tmp/$version/yum; tar xfp -))
+(cd /p/condor/public/html/htcondor/yum/$series; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/yum; tar xfp -))
 echo Copying debs from debian repository...
-(cd /p/condor/public/html/htcondor/debian/$ver; tar cf - $(find -name \*$version\*) | (cd /tmp/$version/debian; tar xfp -))
+(cd /p/condor/public/html/htcondor/debian/$ver; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/debian; tar xfp -))
 echo Copying debs from ubuntu repository...
-(cd /p/condor/public/html/htcondor/ubuntu/$ver; tar cf - $(find -name \*$version\*) | (cd /tmp/$version/ubuntu; tar xfp -))
+(cd /p/condor/public/html/htcondor/ubuntu/$ver; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/ubuntu; tar xfp -))
 
 du -shx /tmp/$version/*

@@ -6,8 +6,6 @@ fi
 
 # The whole version number (3 numbers separated by periods)
 version="$1"
-. $(dirname $0)/common.sh
-
 # The first 2 numbers separated by a period
 ver=${version%.[0-9]*}
 # The middle number, odd is development, even is stable
@@ -39,12 +37,12 @@ wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/htmlzip/ -O /tmp/$vers
 wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/pdf/ -O /tmp/$version/manual/htcondor-${version}.pdf
 wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/epub/ -O /tmp/$version/manual/htcondor-${version}.epub
 echo Copying Downloads...
-cp -pr /p/condor/public/binaries/v$ver/$version /tmp/$version/downloads
+cp -pr /p/condor/public/html/htcondor/tarball/$ver/$version/release/* /tmp/$version/tarballs/
 echo Copying RPMs from yum repository...
 (cd /p/condor/public/html/htcondor/yum/$series; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/yum; tar xfp -))
-echo Copying debs from debian repository...
+echo Copying debs from Debian repository...
 (cd /p/condor/public/html/htcondor/debian/$ver; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/debian; tar xfp -))
-echo Copying debs from ubuntu repository...
+echo Copying debs from Ubuntu repository...
 (cd /p/condor/public/html/htcondor/ubuntu/$ver; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/ubuntu; tar xfp -))
 
 du -shx /tmp/$version/*

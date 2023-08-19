@@ -6,14 +6,14 @@ fi
 
 # The whole version number (3 numbers separated by periods)
 version="$1"
-# The first 2 numbers separated by a period
-ver=${version%.[0-9]*}
-# The middle number, odd is development, even is stable
-rs=${ver#[0-9]*.}
-
-series='development'
-if [ $rs == 0 -o $rs -eq 2 -o $rs -eq 4 -o $rs -eq 6 -o $rs -eq 8 ]; then
-    series='stable'
+# shellcheck disable=SC2206 # don't have to worry abour word splitting
+AVERSION=(${version//./ })
+MAJOR_VER=${AVERSION[0]}
+MINOR_VER=${AVERSION[1]}
+if [ "$MINOR_VER" -eq 0 ]; then
+    ver=$MAJOR_VER.0
+else
+    ver=$MAJOR_VER.x
 fi
 
 rm -rf /tmp/$version
@@ -26,7 +26,7 @@ fi
 mkdir /tmp/$version
 mkdir /tmp/$version/manual
 mkdir /tmp/$version/tarballs
-mkdir /tmp/$version/yum
+mkdir /tmp/$version/rpm
 mkdir /tmp/$version/debian
 mkdir /tmp/$version/ubuntu
 
@@ -37,12 +37,12 @@ wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/htmlzip/ -O /tmp/$vers
 wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/pdf/ -O /tmp/$version/manual/htcondor-${version}.pdf
 wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/epub/ -O /tmp/$version/manual/htcondor-${version}.epub
 echo Copying tarballs...
-cp -pr /p/condor/public/html/htcondor/tarball/$ver/$version/release/* /tmp/$version/tarballs/
+(cd /p/condor/public/html/htcondor/tarball/$ver/$version/release; cp -av * /tmp/$version/tarballs/)
 echo Copying RPMs from RPM repository...
-(cd /p/condor/public/html/htcondor/repo/$ver; tar cf - $(find -L -name \*$version-1\*) | (cd /tmp/$version/yum; tar xfp -))
+(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L $ver* -name \*$version-1\*) | (cd /tmp/$version/rpm; tar xvfp -))
 echo Copying debs from Debian repository...
-(cd /p/condor/public/html/htcondor/repo/debian/$ver; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/debian; tar xfp -))
+(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L debian/$ver* -name \*$version-1\*) | (cd /tmp/$version/debian; tar xvfp -))
 echo Copying debs from Ubuntu repository...
-(cd /p/condor/public/html/htcondor/repo/ubuntu/$ver; tar cf - $(find -L -name \*$version\*) | (cd /tmp/$version/ubuntu; tar xfp -))
+(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L ubuntu/$ver* -name \*$version-1\*) | (cd /tmp/$version/ubuntu; tar xvfp -))
 
 du -shx /tmp/$version/*

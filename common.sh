@@ -25,7 +25,7 @@ if [ $major_ver -ge 10 ]; then
     fi
 fi
 
-# LTS series
+# 9.0 LTS series
 if [ $repo_version = '9.0' ]; then
     if [ $repo = 'daily' ]; then
         # HTCondor 9.0 Daily Key
@@ -36,7 +36,7 @@ if [ $repo_version = '9.0' ]; then
     fi
 fi
 
-# Feature series
+# 9.x Feature series
 if [ $repo_version = '9.1' ]; then
     if [ $repo = 'daily' ]; then
         # HTCondor 9.1 Daily Key
@@ -47,7 +47,7 @@ if [ $repo_version = '9.1' ]; then
     fi
 fi
 
-# LTS series
+# 10.0 LTS series
 if [ $repo_version = '10.0' ]; then
     if [ $repo = 'daily' ]; then
         # HTCondor 10.0 Daily Key
@@ -58,7 +58,7 @@ if [ $repo_version = '10.0' ]; then
     fi
 fi
 
-# Feature series
+# 10.x Feature series
 if [ $repo_version = '10.x' ]; then
     if [ $repo = 'daily' ]; then
         # HTCondor 10.x Daily Key
@@ -69,10 +69,21 @@ if [ $repo_version = '10.x' ]; then
     fi
 fi
 
+# 23 versions
+if [ $major_ver = '23' ]; then
+    if [ $repo = 'daily' ]; then
+        # OSG 23 auto signing key
+        key=1760EDF64D4384D0
+    else
+        # OSG 23 developer signing key
+        key=BDEEE24C92897C00
+    fi
+fi
+
 repository="/p/condor/public/html/htcondor/repo${suffix}"
 
-if [ -z "${GPG_AGENT_INFO}" ]; then
-    killall gpg-agent
-    eval $(gpg-agent --daemon --enable-ssh-support --write-env-file "${HOME}/.gpg-agent-info" --no-use-standard-socket)
-fi
+#if [ -z "${GPG_AGENT_INFO}" ]; then
+    #killall gpg-agent
+    #eval $(gpg-agent --daemon --enable-ssh-support)
+#fi
 

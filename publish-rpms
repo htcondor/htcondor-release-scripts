@@ -120,4 +120,4 @@ for dir in *; do
         update_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     fi
 done
-popd ${input}
+popd

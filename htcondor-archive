@@ -16,33 +16,37 @@ else
     ver=$MAJOR_VER.x
 fi
 
-rm -rf /tmp/$version
+rm -rf /nobackup/tim/htcondor-archive/$version
 
-if [ -d /tmp/$version ]; then
-    echo "/tmp/$version already exists!"
+if [ -d /nobackup/tim/htcondor-archive/$version ]; then
+    echo "/nobackup/tim/htcondor-archive/$version already exists!"
     exit 1
 fi
 
-mkdir /tmp/$version
-mkdir /tmp/$version/manual
-mkdir /tmp/$version/tarballs
-mkdir /tmp/$version/rpm
-mkdir /tmp/$version/debian
-mkdir /tmp/$version/ubuntu
+mkdir /nobackup/tim/htcondor-archive/$version
+mkdir /nobackup/tim/htcondor-archive/$version/manual
+mkdir /nobackup/tim/htcondor-archive/$version/tarballs
+mkdir /nobackup/tim/htcondor-archive/$version/rpm
+mkdir /nobackup/tim/htcondor-archive/$version/debian
+mkdir /nobackup/tim/htcondor-archive/$version/ubuntu
 
-tag=$(echo $version | sed 's/\./_/g')
+if [ $MINOR_VER -eq 0 ]; then
+    tag='lts'
+else
+    tag='latest'
+fi
 
 echo Copying Manual...
-wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/htmlzip/ -O /tmp/$version/manual/index.html.zip
-wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/pdf/ -O /tmp/$version/manual/htcondor-${version}.pdf
-wget https://htcondor.readthedocs.io/_/downloads/en/v$tag/epub/ -O /tmp/$version/manual/htcondor-${version}.epub
+wget https://htcondor.readthedocs.io/_/downloads/en/$tag/htmlzip/ -O /nobackup/tim/htcondor-archive/$version/manual/index.html.zip
+wget https://htcondor.readthedocs.io/_/downloads/en/$tag/pdf/ -O /nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.pdf
+wget https://htcondor.readthedocs.io/_/downloads/en/$tag/epub/ -O /nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.epub
 echo Copying tarballs...
-(cd /p/condor/public/html/htcondor/tarball/$ver/$version/release; cp -av * /tmp/$version/tarballs/)
+(cd /p/condor/public/html/htcondor/tarball/$ver/$version/release; cp -av * /nobackup/tim/htcondor-archive/$version/tarballs/)
 echo Copying RPMs from RPM repository...
-(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L $ver* -name \*$version-1\*) | (cd /tmp/$version/rpm; tar xvfp -))
+(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L $ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/rpm; tar xvfp -))
 echo Copying debs from Debian repository...
-(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L debian/$ver* -name \*$version-1\*) | (cd /tmp/$version/debian; tar xvfp -))
+(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L debian/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/debian; tar xvfp -))
 echo Copying debs from Ubuntu repository...
-(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L ubuntu/$ver* -name \*$version-1\*) | (cd /tmp/$version/ubuntu; tar xvfp -))
+(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L ubuntu/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/ubuntu; tar xvfp -))
 
-du -shx /tmp/$version/*
+du -shx /nobackup/tim/htcondor-archive/$version/*

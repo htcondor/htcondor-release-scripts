@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Make sure we have an AFS tokens
+if ! tokens | grep -q AFS; then
+    echo No AFS token
+    exit 1
+fi
+
 # Ensure things are group writable
 umask 0002
 

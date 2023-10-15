@@ -88,8 +88,12 @@ fi
 
 repository="/p/condor/public/html/htcondor/repo${suffix}"
 
-#if [ -z "${GPG_AGENT_INFO}" ]; then
-    #killall gpg-agent
-    #eval $(gpg-agent --daemon --enable-ssh-support)
-#fi
+# Make sure we can sign something
+echo $key > /tmp/$area$suffix-$repo_version
+if ! gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor /tmp/$area$suffix-$repo_version; then
+    echo Cannot sign
+    rm /tmp/$area$suffix-$repo_version*
+    exit 1
+fi
+rm /tmp/$area$suffix-$repo_version*
 

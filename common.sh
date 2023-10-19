@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Make sure we have an AFS tokens
-if ! tokens | grep -q AFS; then
+if ! tokens | grep -q Expires; then
     echo No AFS token
     exit 1
 fi

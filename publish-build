@@ -113,6 +113,17 @@ if [ "${major_ver}.${minor_ver}" = "10.0" ]; then
                x86_64_Ubuntu22"
 fi
 
+# Platforms for previous versions
+if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
+    win64=10
+    platforms="x86_64_AmazonLinux2 \
+               x86_64_CentOS7 \
+               x86_64_Debian10 \
+               x86_64_Debian11 \
+               x86_64_Rocky8 \
+               x86_64_Ubuntu18"
+fi
+
 #Verify downloads
 echo Checking for all platforms...
 missing=0
@@ -160,7 +171,7 @@ if [ $area = 'security' ]; then
 else
     # Copy source tarball from most earliest Debian build
     if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
-        src_platform="x86_64_Debian9"
+        src_platform="x86_64_Debian10"
     else
         src_platform="x86_64_Debian11"
     fi

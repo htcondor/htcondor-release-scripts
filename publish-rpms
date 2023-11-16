@@ -108,6 +108,8 @@ for dir in *; do
         update_rpm_repo "aarch64_AlmaLinux9" "el9" "aarch64"
     elif [ $dir = 'x86_64_AlmaLinux9' ]; then
         update_rpm_repo "x86_64_AlmaLinux9" "el9" "x86_64"
+    elif [ $dir = 'x86_64_AmazonLinux2' ]; then
+        update_rpm_repo "x86_64_AmazonLinux2" "amzn2" "x86_64"
     elif [ $dir = 'x86_64_AmazonLinux2023' ]; then
         update_rpm_repo "x86_64_AmazonLinux2023" "amzn2023" "x86_64"
     elif [ $dir = 'x86_64_CentOS7' ]; then

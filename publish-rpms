@@ -120,6 +120,8 @@ for dir in *; do
         update_rpm_repo "x86_64_Fedora38" "fc38" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
         update_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
+    elif [ $dir = 'x86_64_openSUSE15' ]; then
+        update_rpm_repo "x86_64_openSUSE15" "leap15" "x86_64"
     fi
 done
 popd

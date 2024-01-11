@@ -41,6 +41,8 @@ if [ $confirm -eq 1 ]; then
     then
         [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
     fi
+else
+    echo
 fi
 
 . $(dirname $0)/common.sh
@@ -118,6 +120,8 @@ for dir in *; do
         update_rpm_repo "x86_64_CentOS8" "el8" "x86_64"
     elif [ $dir = 'x86_64_Fedora38' ]; then
         update_rpm_repo "x86_64_Fedora38" "fc38" "x86_64"
+    elif [ $dir = 'x86_64_Fedora39' ]; then
+        update_rpm_repo "x86_64_Fedora39" "fc39" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
         update_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then

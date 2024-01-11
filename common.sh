@@ -88,6 +88,10 @@ fi
 
 repository="/p/condor/public/html/htcondor/repo${suffix}"
 
+echo "Disk usage for $repository/$repo_version"
+fs lq $repository/$repo_version
+echo
+
 # Make sure we can sign something
 echo $key > /tmp/$area$suffix-$repo_version
 if ! gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor /tmp/$area$suffix-$repo_version; then

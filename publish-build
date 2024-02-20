@@ -44,13 +44,13 @@ tarball_repo=$repo
 # tarball update releases go into a release directory,
 # since each version is in its own directory
 if [ "$repo" = "update" ]; then
-    tarball_repo="release"
+    tarball_repo="rc"
 fi
 tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${tarball_repo}"
 tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
 
-echo "Disk usage for ${tarball}"
-fs lq ${tarball}
+echo "Disk usage for ${tarball_current}"
+fs lq ${tarball_current}
 echo
 
 ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
@@ -85,7 +85,6 @@ platforms="aarch64_AlmaLinux8 \
            x86_64_CentOS7 \
            x86_64_Debian11 \
            x86_64_Debian12 \
-           x86_64_Fedora38 \
            x86_64_Fedora39 \
            x86_64_openSUSE15 \
            x86_64_Ubuntu20 \
@@ -171,7 +170,7 @@ if [ $missing -eq 1 ]; then
     fi
 fi
 
-if [ $repo = 'release' -o $repo = 'update' ]; then
+if [ $repo = 'release' ]; then
     if [ $area != 'test' ]; then
         ssh $batlab nmi_pin --days=365 --force ${build_id}
     else

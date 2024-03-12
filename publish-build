@@ -38,28 +38,24 @@ fi
 
 . $(dirname $0)/common.sh
 
-base="/tmp/condor_${version}-${build_id}"
+base="/nobackup/tim/batlab/condor_${version}-${build_id}"
 input="${base}/public"
-tarball_repo=$repo
-# tarball update releases go into a release directory,
-# since each version is in its own directory
-if [ "$repo" = "update" ]; then
-    tarball_repo="rc"
-fi
-tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${tarball_repo}"
+tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
 tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
 
 echo "Disk usage for ${tarball_current}"
 fs lq ${tarball_current}
 echo
 
-ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
-ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
-rsync -av $batlab:/scratch/condor_${version}-${build_id} /tmp/
+if [ ! -d /nobackup/tim/batlab/condor_${version}-${build_id}/public ]; then
+    ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
+    ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
+    rsync -av $batlab:/scratch/condor_${version}-${build_id} /nobackup/tim/batlab/
+fi
 
 files=0
-if [ -d /tmp/condor_${version}-${build_id}/public ]; then
-    files=$(cd /tmp/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
+if [ -d /nobackup/tim/batlab/condor_${version}-${build_id}/public ]; then
+    files=$(cd /nobackup/tim/batlab/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
 fi
 
 if [ $files -eq 0 ]; then
@@ -101,7 +97,6 @@ if [ "${major_ver}.${minor_ver}" = "23.0" ]; then
                x86_64_CentOS7 \
                x86_64_Debian11 \
                x86_64_Debian12 \
-               x86_64_Fedora38 \
                x86_64_openSUSE15 \
                x86_64_Ubuntu20 \
                x86_64_Ubuntu22"
@@ -216,7 +211,7 @@ else
     cp -p ${input}/${src_platform}/condor_${version}.orig.tar.gz \
           ${tarball}/condor-${version}-src.tar.gz
 
-    if [ $tarball_repo = 'release' ]; then
+    if [ $repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-src.tar.gz \
                   ${tarball_current}/condor-src.tar.gz
     fi
@@ -226,7 +221,7 @@ for platform in $platforms; do
     echo ======= $platform =======
     mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
        ${tarball}/condor-${version}-${platform}-stripped.tar.gz
-    if [ $tarball_repo = 'release' ]; then
+    if [ $repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
                   ${tarball_current}/condor-${platform}-stripped.tar.gz
     fi
@@ -235,7 +230,7 @@ done
 echo ======= x86_64_macOS${macos} =======
 mv ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
    ${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz
-if [ $tarball_repo = 'release' ]; then
+if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz \
               ${tarball_current}/condor-x86_64_macOS${macos}-stripped.tar.gz
 fi
@@ -244,14 +239,14 @@ fi
 echo ======= x86_64_Windows =======
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
    ${tarball}/condor-${version}-Windows-x64.zip
-if [ $tarball_repo = 'release' ]; then
+if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.zip \
               ${tarball_current}/condor-Windows-x64.zip
 fi
 
 mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
    ${tarball}/condor-${version}-Windows-x64.msi
-if [ $tarball_repo = 'release' ]; then
+if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.msi \
               ${tarball_current}/condor-Windows-x64.msi
 fi
@@ -260,7 +255,7 @@ echo Sign tarballs...
 (cd ${tarball} && rm -f sha256sum.txt.gpg)
 (cd ${tarball} && sha256sum *${version}* > sha256sum.txt)
 (cd ${tarball} && gpg --sign -u 0x$key sha256sum.txt)
-if [ $tarball_repo = 'release' ]; then
+if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/sha256sum.txt ${tarball_current}
     tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
 fi
@@ -272,5 +267,7 @@ $(dirname $0)/publish-rpms -y ${input} ${area} ${version} ${repo}
 $(dirname $0)/publish-debs -y ${input} ${area} ${version} ${repo}
 
 # Clean up temp space
-echo Clean up temp space
-rm -rf ${base}
+if [ "$repo" != "rc" ]; then
+    echo Clean up temp space
+    rm -rf ${base}
+fi

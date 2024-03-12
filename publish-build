@@ -260,6 +260,20 @@ if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
 fi
 
+# Clean out old tarballs
+if [ "$repo" = "rc" ]; then
+    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
+fi
+if [ "$repo" = "update" ]; then
+    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
+    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/rc"
+fi
+if [ "$repo" = "release" ]; then
+    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
+    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/rc"
+    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/update"
+fi
+
 # Move RPMs into place
 $(dirname $0)/publish-rpms -y ${input} ${area} ${version} ${repo}
 

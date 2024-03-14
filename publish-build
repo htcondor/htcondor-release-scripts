@@ -208,7 +208,7 @@ else
         fi
     fi
 
-    cp -p ${input}/${src_platform}/condor_${version}.orig.tar.gz \
+    cp -a ${input}/${src_platform}/condor_${version}.orig.tar.gz \
           ${tarball}/condor-${version}-src.tar.gz
 
     if [ $repo = 'release' ]; then
@@ -219,8 +219,8 @@ fi
 
 for platform in $platforms; do
     echo ======= $platform =======
-    mv ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
-       ${tarball}/condor-${version}-${platform}-stripped.tar.gz
+    cp -a ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+          ${tarball}/condor-${version}-${platform}-stripped.tar.gz
     if [ $repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
                   ${tarball_current}/condor-${platform}-stripped.tar.gz
@@ -228,8 +228,8 @@ for platform in $platforms; do
 done
 
 echo ======= x86_64_macOS${macos} =======
-mv ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
-   ${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz
+cp -a ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
+      ${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz
 if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz \
               ${tarball_current}/condor-x86_64_macOS${macos}-stripped.tar.gz
@@ -237,15 +237,15 @@ fi
 
 
 echo ======= x86_64_Windows =======
-mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
-   ${tarball}/condor-${version}-Windows-x64.zip
+cp -a ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
+      ${tarball}/condor-${version}-Windows-x64.zip
 if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.zip \
               ${tarball_current}/condor-Windows-x64.zip
 fi
 
-mv ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
-   ${tarball}/condor-${version}-Windows-x64.msi
+cp -a ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
+      ${tarball}/condor-${version}-Windows-x64.msi
 if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.msi \
               ${tarball_current}/condor-Windows-x64.msi

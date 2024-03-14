@@ -19,13 +19,13 @@ This directory contains scripts needed to manage the HTCondor repositories.
         -   release: final releases - flows into osg-main repositories
 
 -   **publish-rpms**: This script is used to put third-party RPMs (e.g. pelican) into our repositories.
-    -   directory: the directory containing the RPMs. This directory is expected to have sub-directories that match the platform (i.e. `x86\_64\_AlmaLinux9`)
+    -   directory: the directory containing the RPMs. This directory is expected to have sub-directories that match the platform (i.e. `x86_64_AlmaLinux9`)
     -   area: as above
     -   version: matching HTCondor version (to select LTS or feature repositories)
     -   repository: as above
 
 -   **publish-debs**: This script is used to add third-party debs to the release repositories only.
-    -   directory: the directory containing the debs. This directory is expected to have sub-directories that match the platform (i.e. `x86\_64\_AlmaLinux9`)
+    -   directory: the directory containing the debs. This directory is expected to have sub-directories that match the platform (i.e. `x86_64_AlmaLinux9`)
     -   area: as above
     -   version: matching HTCondor version (to select LTS or feature repositories)
     -   repository: **release** only

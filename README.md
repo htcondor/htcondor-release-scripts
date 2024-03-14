@@ -1,4 +1,4 @@
-# HTCondor Release Script
+# HTCondor Release Scripts
 
 This directory contains scripts needed to manage the HTCondor repositories.
 
@@ -31,5 +31,5 @@ This directory contains scripts needed to manage the HTCondor repositories.
     -   repository: **release** only
 
 -   To have .debs populate into the daily, rc, and update repositories, add the packages to the proper directories on dumbo.
-    -   For 23.0: =/nobackup/tim/externals/23.0=
-    -   For 23.x: =/nobackup/tim/externals/23.x=
+    -   For 23.0: `/nobackup/tim/externals/23.0`
+    -   For 23.x: `/nobackup/tim/externals/23.x`

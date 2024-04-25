@@ -281,7 +281,7 @@ $(dirname $0)/publish-rpms -y ${input} ${area} ${version} ${repo}
 $(dirname $0)/publish-debs -y ${input} ${area} ${version} ${repo}
 
 # Clean up temp space
-if [ "$repo" != "rc" ]; then
+if [ "$repo" = "release" ]; then
     echo Clean up temp space
     rm -rf ${base}
 fi

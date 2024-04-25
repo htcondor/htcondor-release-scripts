@@ -131,6 +131,8 @@ for dir in $dirs; do
         drop_deb_publish "ubuntu" "focal"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
         drop_deb_publish "ubuntu" "jammy"
+    elif [ $dir = 'x86_64_Ubuntu24' ]; then
+        drop_deb_publish "ubuntu" "noble"
     fi
 done
 
@@ -154,6 +156,8 @@ if [ $repo = 'daily' -o $repo = 'rc' ]; then
             drop_deb_repo "ubuntu" "focal"
         elif [ $dir = 'x86_64_Ubuntu22' ]; then
             drop_deb_repo "ubuntu" "jammy"
+        elif [ $dir = 'x86_64_Ubuntu24' ]; then
+            drop_deb_repo "ubuntu" "noble"
         fi
     done
     ${aptly} db cleanup
@@ -177,6 +181,8 @@ for dir in $dirs; do
         update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el,source"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy" "amd64,source"
+    elif [ $dir = 'x86_64_Ubuntu24' ]; then
+        update_deb_repo_and_publish "x86_64_Ubuntu24" "ubuntu" "noble" "amd64,source"
     fi
 done
 

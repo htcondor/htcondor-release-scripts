@@ -65,6 +65,7 @@ while(<$LOG>) {
         $author =~ s/^burnett$/Ben Burnett/;
         $author =~ s/^ckireyev$/Carey Kireyev/;
         $author =~ s/^coatsworth$/Mark Coatsworth/;
+        $author =~ s/^condor$/The HTCondor Team/;
         $author =~ s/^danb$/Dan Bradley/;
         $author =~ s/^dhaval$/Dhaval Shah/;
         $author =~ s/^Dr Dave D$/Dave Dykstra/;

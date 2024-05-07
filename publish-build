@@ -81,10 +81,11 @@ platforms="aarch64_AlmaLinux8 \
            x86_64_CentOS7 \
            x86_64_Debian11 \
            x86_64_Debian12 \
-           x86_64_Fedora39 \
+           x86_64_Fedora40 \
            x86_64_openSUSE15 \
            x86_64_Ubuntu20 \
-           x86_64_Ubuntu22"
+           x86_64_Ubuntu22 \
+           x86_64_Ubuntu24"
 
 if [ "${major_ver}.${minor_ver}" = "23.0" ]; then
     platforms="aarch64_AlmaLinux8 \
@@ -99,7 +100,8 @@ if [ "${major_ver}.${minor_ver}" = "23.0" ]; then
                x86_64_Debian12 \
                x86_64_openSUSE15 \
                x86_64_Ubuntu20 \
-               x86_64_Ubuntu22"
+               x86_64_Ubuntu22 \
+               x86_64_Ubuntu24"
 fi
 
 if [ "${major_ver}" = "10" ]; then

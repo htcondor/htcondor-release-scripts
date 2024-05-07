@@ -122,6 +122,8 @@ for dir in *; do
         update_rpm_repo "x86_64_Fedora38" "fc38" "x86_64"
     elif [ $dir = 'x86_64_Fedora39' ]; then
         update_rpm_repo "x86_64_Fedora39" "fc39" "x86_64"
+    elif [ $dir = 'x86_64_Fedora40' ]; then
+        update_rpm_repo "x86_64_Fedora40" "fc40" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
         update_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then

@@ -138,7 +138,7 @@ done
 
 # Drop old repos for daily and rc builds
 # Because the souce tarball changes with a fixed version number
-if [ $repo = 'daily' -o $repo = 'rc' ]; then
+if [ $repo = 'daily' -o $repo = 'rc' -o $repo = 'update' ]; then
     for dir in $dirs; do
         if [ $dir = 'x86_64_Debian9' ]; then
             drop_deb_repo "debian" "stretch"

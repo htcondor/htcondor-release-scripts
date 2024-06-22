@@ -74,7 +74,6 @@ macos=13
 platforms="aarch64_AlmaLinux8 \
            aarch64_AlmaLinux9 \
            ppc64le_AlmaLinux8 \
-           ppc64le_Ubuntu20 \
            x86_64_AlmaLinux8 \
            x86_64_AlmaLinux9 \
            x86_64_AmazonLinux2023 \
@@ -91,7 +90,6 @@ if [ "${major_ver}.${minor_ver}" = "23.0" ]; then
     platforms="aarch64_AlmaLinux8 \
                aarch64_AlmaLinux9 \
                ppc64le_AlmaLinux8 \
-               ppc64le_Ubuntu20 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
                x86_64_AmazonLinux2023 \

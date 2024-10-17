@@ -86,6 +86,17 @@ if [ $major_ver = '23' ]; then
     fi
 fi
 
+# 24 versions
+if [ $major_ver = '24' ]; then
+    if [ $repo = 'snapshot' ]; then
+        # OSG 23 auto signing key
+        key=51F0C13734E958B3
+    else
+        # OSG 23 developer signing key
+        key=9DF75B52EFFC3BE6
+    fi
+fi
+
 repository="/p/condor/public/html/htcondor/repo${suffix}"
 
 echo "Disk usage for $repository/$repo_version"

@@ -7,7 +7,7 @@ usage() {
     echo input example: /nobackup/tim/externals/9.1
     echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
-    echo repo examples: release, rc, update, daily
+    echo repo examples: snapshot, daily, alpha, rc, beta, update, release
 
 }
 
@@ -136,9 +136,9 @@ for dir in $dirs; do
     fi
 done
 
-# Drop old repos for daily and rc builds
+# Drop old repos for snapshot and rc builds
 # Because the souce tarball changes with a fixed version number
-if [ $repo = 'daily' -o $repo = 'rc' -o $repo = 'update' ]; then
+if [ $repo != 'release' ]; then
     for dir in $dirs; do
         if [ $dir = 'x86_64_Debian9' ]; then
             drop_deb_repo "debian" "stretch"

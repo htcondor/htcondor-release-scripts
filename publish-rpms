@@ -7,7 +7,7 @@ usage() {
     echo input example: /nobackup/tim/externals/9.1
     echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
-    echo repo examples: release, rc, update, daily
+    echo repo examples: snapshot, daily, alpha, rc, beta, update, release
 
 }
 

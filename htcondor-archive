@@ -10,6 +10,7 @@ version="$1"
 AVERSION=(${version//./ })
 MAJOR_VER=${AVERSION[0]}
 MINOR_VER=${AVERSION[1]}
+PATCH_VER=${AVERSION[2]}
 if [ "$MINOR_VER" -eq 0 ]; then
     ver=$MAJOR_VER.0
 else
@@ -35,6 +36,7 @@ if [ $MINOR_VER -eq 0 ]; then
 else
     tag='latest'
 fi
+# tag="v$version"
 
 echo Copying Manual...
 wget https://htcondor.readthedocs.io/_/downloads/en/$tag/htmlzip/ -O /nobackup/tim/htcondor-archive/$version/manual/index.html.zip

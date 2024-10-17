@@ -8,7 +8,7 @@ usage() {
     echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
     echo build_id example: 543234
-    echo repo examples: release, rc, update, daily
+    echo repo examples: snapshot, daily, alpha, rc, beta, update, release
 
 }
 if [ $# -ne 4 ]; then
@@ -77,6 +77,36 @@ platforms="aarch64_AlmaLinux8 \
            x86_64_AlmaLinux8 \
            x86_64_AlmaLinux9 \
            x86_64_AmazonLinux2023 \
+           x86_64_Debian11 \
+           x86_64_Debian12 \
+           x86_64_Fedora40 \
+           x86_64_openSUSE15 \
+           x86_64_Ubuntu22 \
+           x86_64_Ubuntu24"
+
+if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
+    platforms="aarch64_AlmaLinux8 \
+               aarch64_AlmaLinux9 \
+               ppc64le_AlmaLinux8 \
+               x86_64_AlmaLinux8 \
+               x86_64_AlmaLinux9 \
+               x86_64_AmazonLinux2023 \
+               x86_64_Debian11 \
+               x86_64_Debian12 \
+               x86_64_openSUSE15 \
+               x86_64_Ubuntu20 \
+               x86_64_Ubuntu22 \
+               x86_64_Ubuntu24"
+fi
+
+# Platforms for previous versions
+if [ "${major_ver}" = "23" ]; then
+platforms="aarch64_AlmaLinux8 \
+           aarch64_AlmaLinux9 \
+           ppc64le_AlmaLinux8 \
+           x86_64_AlmaLinux8 \
+           x86_64_AlmaLinux9 \
+           x86_64_AmazonLinux2023 \
            x86_64_CentOS7 \
            x86_64_Debian11 \
            x86_64_Debian12 \
@@ -85,6 +115,7 @@ platforms="aarch64_AlmaLinux8 \
            x86_64_Ubuntu20 \
            x86_64_Ubuntu22 \
            x86_64_Ubuntu24"
+fi
 
 if [ "${major_ver}.${minor_ver}" = "23.0" ]; then
     platforms="aarch64_AlmaLinux8 \
@@ -118,7 +149,6 @@ if [ "${major_ver}" = "10" ]; then
                x86_64_Ubuntu22"
 fi
 
-# Platforms for previous versions
 if [ "${major_ver}.${minor_ver}" = "10.0" ]; then
     win64=10
     platforms="aarch64_AlmaLinux8 \

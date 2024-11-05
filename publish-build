@@ -93,6 +93,7 @@ if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
                x86_64_AmazonLinux2023 \
                x86_64_Debian11 \
                x86_64_Debian12 \
+               x86_64_Fedora40 \
                x86_64_openSUSE15 \
                x86_64_Ubuntu20 \
                x86_64_Ubuntu22 \

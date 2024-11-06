@@ -40,11 +40,15 @@ fi
 
 base="/nobackup/tim/batlab/condor_${version}-${build_id}"
 input="${base}/public"
-tarball="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
-tarball_current="/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/current"
+tarball="${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/${repo}"
+tarball_current="${web_dir}/htcondor/tarball${suffix}/${repo_version}/current"
 
 echo "Disk usage for ${tarball_current}"
-fs lq ${tarball_current}
+if [ -d /p/condor/public/html/htcondor ]; then
+    fs lq -human ${tarball_current}
+elif [ -d /htcss/htcondor ]; then
+    df -h ${tarball_current}
+fi
 echo
 
 if [ ! -d /nobackup/tim/batlab/condor_${version}-${build_id}/public ]; then
@@ -292,17 +296,23 @@ if [ $repo = 'release' ]; then
 fi
 
 # Clean out old tarballs
-if [ "$repo" = "rc" ]; then
-    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
+if [ "$repo" = "rc" -o "$repo" = "alpha" ]; then
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/snapshot"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
 fi
-if [ "$repo" = "update" ]; then
-    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
-    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/rc"
+if [ "$repo" = "update" -o "$repo" = "beta" ]; then
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/snapshot"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/alpha"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/rc"
 fi
 if [ "$repo" = "release" ]; then
-    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
-    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/rc"
-    rm -rf "/p/condor/public/html/htcondor/tarball${suffix}/${repo_version}/${version}/update"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/snapshot"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/alpha"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/beta"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/daily"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/rc"
+    rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/update"
 fi
 
 # Move RPMs into place

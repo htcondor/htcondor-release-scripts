@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # Make sure we have an AFS tokens
-if ! tokens | grep -q Expires; then
-    echo No AFS token
-    exit 1
+if [ -d /p/condor/public/html/htcondor ]; then
+    if ! tokens | grep -q Expires; then
+        echo No AFS token
+        exit 1
+    fi
 fi
 
 # Ensure things are group writable
@@ -97,10 +99,22 @@ if [ $major_ver = '24' ]; then
     fi
 fi
 
-repository="/p/condor/public/html/htcondor/repo${suffix}"
+if [ -d /p/condor/public/html/htcondor ]; then
+    web_dir='/p/condor/public/html/htcondor'
+elif [ -d /htcss/htcondor ]; then
+    web_dir='/htcss/htcondor'
+else
+    echo 'Cannot find the web directory!'
+    exit 1;
+fi
+repository="${web_dir}/repo${suffix}"
 
 echo "Disk usage for $repository/$repo_version"
-fs lq $repository/$repo_version
+if [ -d /p/condor/public/html/htcondor ]; then
+    fs lq -human $repository/$repo_version
+elif [ -d /htcss/htcondor ]; then
+    df -h $repository/$repo_version
+fi
 echo
 
 # Make sure we can sign something

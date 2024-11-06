@@ -295,6 +295,11 @@ if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
 fi
 
+# Drop in compatibility symlink
+if [ "$repo" = "beta" ]; then
+   ln -s beta "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/update"
+fi
+
 # Clean out old tarballs
 if [ "$repo" = "rc" -o "$repo" = "alpha" ]; then
     rm -rf "${web_dir}/htcondor/tarball${suffix}/${repo_version}/${version}/snapshot"

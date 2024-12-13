@@ -21,6 +21,23 @@ major_ver=${aversion[0]}
 minor_ver=${aversion[1]}
 patch_ver=${aversion[2]}
 
+# Check repo against major version
+if [ $major_ver -le 23 ]; then
+    if [ $repo = 'daily' ] || [ $repo = 'rc' ] || [ $repo = 'update' ] || [ $repo = 'release' ]; then
+        true # looks good
+    else
+        echo Bad repo designation: $repo
+        exit 1
+    fi
+else
+    if [ $repo = 'snapshot' ] || [ $repo = 'alpha' ] || [ $repo = 'beta' ] || [ $repo = 'release' ]; then
+        true # looks good
+    else
+        echo Bad repo designation: $repo
+        exit 1
+    fi
+fi
+
 repo_version="${major_ver}.${minor_ver}"
 if [ $major_ver -eq 9 ]; then
     if [ $minor_ver -ne 0 ]; then

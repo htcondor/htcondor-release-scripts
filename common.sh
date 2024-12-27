@@ -50,6 +50,9 @@ if [ $major_ver -ge 10 ]; then
     fi
 fi
 
+# Old key, issued 2013, 2048 bits
+key=670079F6
+
 # 9.0 LTS series
 if [ $repo_version = '9.0' ]; then
     if [ $repo = 'daily' ]; then

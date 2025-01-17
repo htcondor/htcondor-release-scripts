@@ -88,6 +88,10 @@ for dir in *; do
         sign_rpm_repo "aarch64_AlmaLinux9" "el9" "aarch64"
     elif [ $dir = 'x86_64_AlmaLinux9' ]; then
         sign_rpm_repo "x86_64_AlmaLinux9" "el9" "x86_64"
+    elif [ $dir = 'aarch64_AlmaLinux10' ]; then
+        sign_rpm_repo "aarch64_AlmaLinux10" "el10" "aarch64"
+    elif [ $dir = 'x86_64_AlmaLinux10' ]; then
+        sign_rpm_repo "x86_64_AlmaLinux10" "el10" "x86_64"
     elif [ $dir = 'x86_64_AmazonLinux2' ]; then
         sign_rpm_repo "x86_64_AmazonLinux2" "amzn2" "x86_64"
     elif [ $dir = 'x86_64_AmazonLinux2023' ]; then
@@ -102,6 +106,8 @@ for dir in *; do
         sign_rpm_repo "x86_64_Fedora39" "fc39" "x86_64"
     elif [ $dir = 'x86_64_Fedora40' ]; then
         sign_rpm_repo "x86_64_Fedora40" "fc40" "x86_64"
+    elif [ $dir = 'x86_64_Fedora41' ]; then
+        sign_rpm_repo "x86_64_Fedora41" "fc41" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
         sign_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then

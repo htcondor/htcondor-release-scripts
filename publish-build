@@ -77,13 +77,15 @@ macos=13
 # These are Linux platforms. Mac and Window platforms are handled specially.
 platforms="aarch64_AlmaLinux8 \
            aarch64_AlmaLinux9 \
+           aarch64_AlmaLinux10 \
            ppc64le_AlmaLinux8 \
            x86_64_AlmaLinux8 \
            x86_64_AlmaLinux9 \
+           x86_64_AlmaLinux10 \
            x86_64_AmazonLinux2023 \
            x86_64_Debian11 \
            x86_64_Debian12 \
-           x86_64_Fedora40 \
+           x86_64_Fedora41 \
            x86_64_openSUSE15 \
            x86_64_Ubuntu22 \
            x86_64_Ubuntu24"
@@ -91,13 +93,14 @@ platforms="aarch64_AlmaLinux8 \
 if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
     platforms="aarch64_AlmaLinux8 \
                aarch64_AlmaLinux9 \
+               aarch64_AlmaLinux10 \
                ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
+               x86_64_AlmaLinux10 \
                x86_64_AmazonLinux2023 \
                x86_64_Debian11 \
                x86_64_Debian12 \
-               x86_64_Fedora40 \
                x86_64_openSUSE15 \
                x86_64_Ubuntu20 \
                x86_64_Ubuntu22 \
@@ -297,11 +300,11 @@ fi
 
 # Drop in compatibility symlink
 if [ "$repo" = 'alpha' ]; then
-   ln -s alpha "${web_dir}/tarball${suffix}/${repo_version}/${version}/rc"
+   ln -sf alpha "${web_dir}/tarball${suffix}/${repo_version}/${version}/rc"
 elif [ "$repo" = 'beta' ]; then
-   ln -s beta "${web_dir}/tarball${suffix}/${repo_version}/${version}/update"
+   ln -sf beta "${web_dir}/tarball${suffix}/${repo_version}/${version}/update"
 elif [ "$repo" = 'snapshot' ]; then
-   ln -s snapshot "${web_dir}/tarball${suffix}/${repo_version}/${version}/daily"
+   ln -sf snapshot "${web_dir}/tarball${suffix}/${repo_version}/${version}/daily"
 fi
 
 # Clean out old tarballs

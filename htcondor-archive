@@ -17,8 +17,6 @@ else
     ver=$MAJOR_VER.x
 fi
 
-rm -rf /nobackup/tim/htcondor-archive/$version
-
 if [ -d /nobackup/tim/htcondor-archive/$version ]; then
     echo "/nobackup/tim/htcondor-archive/$version already exists!"
     exit 1
@@ -43,12 +41,12 @@ wget https://htcondor.readthedocs.io/_/downloads/en/$tag/htmlzip/ -O /nobackup/t
 wget https://htcondor.readthedocs.io/_/downloads/en/$tag/pdf/ -O /nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.pdf
 wget https://htcondor.readthedocs.io/_/downloads/en/$tag/epub/ -O /nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.epub
 echo Copying tarballs...
-(cd /p/condor/public/html/htcondor/tarball/$ver/$version/release; cp -av * /nobackup/tim/htcondor-archive/$version/tarballs/)
+(cd /htcss/htcondor/tarball/$ver/$version/release; cp -av * /nobackup/tim/htcondor-archive/$version/tarballs/)
 echo Copying RPMs from RPM repository...
-(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L $ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/rpm; tar xvfp -))
+(cd /htcss/htcondor/repo; tar cf - $(find -L $ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/rpm; tar xvfp -))
 echo Copying debs from Debian repository...
-(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L debian/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/debian; tar xvfp -))
+(cd /htcss/htcondor/repo; tar cf - $(find -L debian/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/debian; tar xvfp -))
 echo Copying debs from Ubuntu repository...
-(cd /p/condor/public/html/htcondor/repo; tar cf - $(find -L ubuntu/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/ubuntu; tar xvfp -))
+(cd /htcss/htcondor/repo; tar cf - $(find -L ubuntu/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/ubuntu; tar xvfp -))
 
 du -shx /nobackup/tim/htcondor-archive/$version/*

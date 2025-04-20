@@ -257,6 +257,9 @@ fi
 
 for platform in $platforms; do
     echo ======= $platform =======
+    if [ $platform = 'x86_64_CentOS7' ] && [ "${major_ver}" = '23' ] && [ "${minor_ver}" != '0' ]; then
+        $(dirname $0)/repack-tarball ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz
+    fi
     cp -a ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
           ${tarball}/condor-${version}-${platform}-stripped.tar.gz
     if [ $repo = 'release' ]; then

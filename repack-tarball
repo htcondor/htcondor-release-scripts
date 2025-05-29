@@ -23,6 +23,7 @@ if [ -d "$tarball_dir" ]; then
     rm -r usr/share/doc/pelican-*
     rpm2cpio /nobackup/tim/externals/23.x/x86_64_CentOS7/pelican-[0-9]*.x86_64.rpm | cpio -imdu --no-absolute-filenames
     rpm2cpio /nobackup/tim/externals/23.x/x86_64_CentOS7/pelican-osdf-compat-[0-9]*.x86_64.rpm | cpio -imdu --no-absolute-filenames
+    usr/bin/pelican --version
     cd ..
     tar --create --gzip --owner=0 --group=0 --numeric-owner --file "$tarball_dir.tar.gz" "$tarball_dir"
     rm -rf "$tarball_dir"

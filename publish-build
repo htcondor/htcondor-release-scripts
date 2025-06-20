@@ -88,7 +88,8 @@ platforms="aarch64_AlmaLinux8 \
            x86_64_Fedora41 \
            x86_64_openSUSE15 \
            x86_64_Ubuntu22 \
-           x86_64_Ubuntu24"
+           x86_64_Ubuntu24 \
+           x86_64_v2_AlmaLinux10"
 
 if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
     platforms="aarch64_AlmaLinux8 \
@@ -104,7 +105,8 @@ if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
                x86_64_openSUSE15 \
                x86_64_Ubuntu20 \
                x86_64_Ubuntu22 \
-               x86_64_Ubuntu24"
+               x86_64_Ubuntu24 \
+               x86_64_v2_AlmaLinux10"
 fi
 
 # Platforms for previous versions

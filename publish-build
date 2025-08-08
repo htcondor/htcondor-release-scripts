@@ -1,6 +1,6 @@
 #!/bin/bash
 
-batlab='condorauto@batlab.chtc.wisc.edu'
+batlab='condorauto@batlab-ap2001.chtc.wisc.edu'
 
 usage() {
     echo "Usage: $(basename $0) area version build_id repo"

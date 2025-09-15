@@ -123,6 +123,8 @@ for dir in $dirs; do
         drop_deb_publish "debian" "bullseye"
     elif [ $dir = 'x86_64_Debian12' ]; then
         drop_deb_publish "debian" "bookworm"
+    elif [ $dir = 'x86_64_Debian13' ]; then
+        drop_deb_publish "debian" "trixie"
     elif [ $dir = 'x86_64_Ubuntu18' ]; then
         drop_deb_publish "ubuntu" "bionic"
     elif [ $dir = 'x86_64_Ubuntu20' ]; then
@@ -148,6 +150,8 @@ if [ $repo != 'release' ]; then
             drop_deb_repo "debian" "bullseye"
         elif [ $dir = 'x86_64_Debian12' ]; then
             drop_deb_repo "debian" "bookworm"
+        elif [ $dir = 'x86_64_Debian13' ]; then
+            drop_deb_repo "debian" "trixie"
         elif [ $dir = 'x86_64_Ubuntu18' ]; then
             drop_deb_repo "ubuntu" "bionic"
         elif [ $dir = 'x86_64_Ubuntu20' ]; then
@@ -173,6 +177,8 @@ for dir in $dirs; do
         update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye" "amd64,source"
     elif [ $dir = 'x86_64_Debian12' ]; then
         update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm" "amd64,source"
+    elif [ $dir = 'x86_64_Debian13' ]; then
+        update_deb_repo_and_publish "x86_64_Debian13" "debian" "trixie" "amd64,source"
     elif [ $dir = 'x86_64_Ubuntu18' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic" "amd64,source"
     elif [ $dir = 'x86_64_Ubuntu20' ]; then

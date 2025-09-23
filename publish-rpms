@@ -120,20 +120,8 @@ for dir in *; do
         update_rpm_repo "x86_64_AmazonLinux2" "amzn2" "x86_64"
     elif [ $dir = 'x86_64_AmazonLinux2023' ]; then
         update_rpm_repo "x86_64_AmazonLinux2023" "amzn2023" "x86_64"
-    elif [ $dir = 'x86_64_CentOS7' ]; then
-        update_rpm_repo "x86_64_CentOS7" "el7" "x86_64"
-    elif [ $dir = 'x86_64_CentOS8' ]; then
-        update_rpm_repo "x86_64_CentOS8" "el8" "x86_64"
-    elif [ $dir = 'x86_64_Fedora38' ]; then
-        update_rpm_repo "x86_64_Fedora38" "fc38" "x86_64"
-    elif [ $dir = 'x86_64_Fedora39' ]; then
-        update_rpm_repo "x86_64_Fedora39" "fc39" "x86_64"
-    elif [ $dir = 'x86_64_Fedora40' ]; then
-        update_rpm_repo "x86_64_Fedora40" "fc40" "x86_64"
-    elif [ $dir = 'x86_64_Fedora41' ]; then
-        update_rpm_repo "x86_64_Fedora41" "fc41" "x86_64"
-    elif [ $dir = 'x86_64_Rocky8' ]; then
-        update_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
+    elif [ $dir = 'x86_64_Fedora42' ]; then
+        update_rpm_repo "x86_64_Fedora42" "fc42" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then
         update_rpm_repo "x86_64_openSUSE15" "leap15" "x86_64"
     fi

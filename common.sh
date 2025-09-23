@@ -111,11 +111,22 @@ fi
 # 24 versions
 if [ $major_ver = '24' ]; then
     if [ $repo = 'snapshot' ]; then
-        # OSG 23 auto signing key
+        # OSG 24 auto signing key
         key=51F0C13734E958B3
     else
-        # OSG 23 developer signing key
+        # OSG 24 developer signing key
         key=9DF75B52EFFC3BE6
+    fi
+fi
+
+# 25 versions
+if [ $major_ver = '25' ]; then
+    if [ $repo = 'snapshot' ]; then
+        # OSG 25 auto signing key
+        key=467CD904222C5D49
+    else
+        # OSG 25 developer signing key
+        key=74E5BE22D4E9B1FC
     fi
 fi
 

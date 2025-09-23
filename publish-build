@@ -75,22 +75,58 @@ win64=9
 macos=13
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
-platforms="aarch64_AlmaLinux8 \
-           aarch64_AlmaLinux9 \
-           aarch64_AlmaLinux10 \
-           ppc64le_AlmaLinux8 \
-           x86_64_AlmaLinux8 \
-           x86_64_AlmaLinux9 \
-           x86_64_AlmaLinux10 \
-           x86_64_AmazonLinux2023 \
-           x86_64_Debian11 \
-           x86_64_Debian12 \
-           x86_64_Debian13 \
-           x86_64_Fedora41 \
-           x86_64_openSUSE15 \
-           x86_64_Ubuntu22 \
-           x86_64_Ubuntu24 \
-           x86_64_v2_AlmaLinux10"
+if [ "${major_ver}" = "25" ]; then
+    platforms="aarch64_AlmaLinux8 \
+               aarch64_AlmaLinux9 \
+               aarch64_AlmaLinux10 \
+               ppc64le_AlmaLinux8 \
+               x86_64_AlmaLinux8 \
+               x86_64_AlmaLinux9 \
+               x86_64_AlmaLinux10 \
+               x86_64_AmazonLinux2023 \
+               x86_64_Debian12 \
+               x86_64_Debian13 \
+               x86_64_openSUSE15 \
+               x86_64_Ubuntu22 \
+               x86_64_Ubuntu24 \
+               x86_64_v2_AlmaLinux10"
+fi
+
+if [ "${major_ver}.${minor_ver}" = "25.0" ]; then
+    platforms="aarch64_AlmaLinux8 \
+               aarch64_AlmaLinux9 \
+               aarch64_AlmaLinux10 \
+               ppc64le_AlmaLinux8 \
+               x86_64_AlmaLinux8 \
+               x86_64_AlmaLinux9 \
+               x86_64_AlmaLinux10 \
+               x86_64_AmazonLinux2023 \
+               x86_64_Debian12 \
+               x86_64_Debian13 \
+               x86_64_openSUSE15 \
+               x86_64_Ubuntu22 \
+               x86_64_Ubuntu24 \
+               x86_64_v2_AlmaLinux10"
+fi
+
+# Platforms for previous versions
+if [ "${major_ver}" = "24" ]; then
+    platforms="aarch64_AlmaLinux8 \
+               aarch64_AlmaLinux9 \
+               aarch64_AlmaLinux10 \
+               ppc64le_AlmaLinux8 \
+               x86_64_AlmaLinux8 \
+               x86_64_AlmaLinux9 \
+               x86_64_AlmaLinux10 \
+               x86_64_AmazonLinux2023 \
+               x86_64_Debian11 \
+               x86_64_Debian12 \
+               x86_64_Debian13 \
+               x86_64_openSUSE15 \
+               x86_64_Ubuntu22 \
+               x86_64_Ubuntu24 \
+               x86_64_v2_AlmaLinux10"
+fi
 
 if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
     platforms="aarch64_AlmaLinux8 \
@@ -111,7 +147,6 @@ if [ "${major_ver}.${minor_ver}" = "24.0" ]; then
                x86_64_v2_AlmaLinux10"
 fi
 
-# Platforms for previous versions
 if [ "${major_ver}" = "23" ]; then
 platforms="aarch64_AlmaLinux8 \
            aarch64_AlmaLinux9 \
@@ -122,7 +157,6 @@ platforms="aarch64_AlmaLinux8 \
            x86_64_CentOS7 \
            x86_64_Debian11 \
            x86_64_Debian12 \
-           x86_64_Fedora40 \
            x86_64_openSUSE15 \
            x86_64_Ubuntu20 \
            x86_64_Ubuntu22 \
@@ -156,7 +190,6 @@ if [ "${major_ver}" = "10" ]; then
                x86_64_CentOS7 \
                x86_64_Debian11 \
                x86_64_Debian12 \
-               x86_64_Fedora38 \
                x86_64_Ubuntu20 \
                x86_64_Ubuntu22"
 fi
@@ -229,12 +262,8 @@ if [ $area = 'security' ]; then
     find $input -name \*.orig.tar.gz -print -exec rm -f {} +
     find $input -name \*.src.rpm -print -exec rm -f {} +
 else
-    # Copy source tarball from most earliest Debian build
-    if [ "${major_ver}.${minor_ver}" = "9.0" ]; then
-        src_platform="x86_64_Debian10"
-    else
-        src_platform="x86_64_Debian11"
-    fi
+    # Copy source tarball from a Debian build
+    src_platform="x86_64_Debian12"
 
     # Check for source tarball
     if [ ! -f ${input}/${src_platform}/condor_${version}.orig.tar.gz ]; then

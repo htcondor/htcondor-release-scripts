@@ -334,15 +334,6 @@ if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
 fi
 
-# Drop in compatibility symlink
-if [ "$repo" = 'alpha' ]; then
-   ln -sf alpha "${web_dir}/tarball${suffix}/${repo_version}/${version}/rc"
-elif [ "$repo" = 'beta' ]; then
-   ln -sf beta "${web_dir}/tarball${suffix}/${repo_version}/${version}/update"
-elif [ "$repo" = 'snapshot' ]; then
-   ln -sf snapshot "${web_dir}/tarball${suffix}/${repo_version}/${version}/daily"
-fi
-
 # Clean out old tarballs
 if [ "$repo" = 'rc' -o "$repo" = 'alpha' ]; then
     rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/snapshot"

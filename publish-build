@@ -79,6 +79,7 @@ if [ "${major_ver}" = "25" ]; then
     platforms="aarch64_AlmaLinux8 \
                aarch64_AlmaLinux9 \
                aarch64_AlmaLinux10 \
+               aarch64_Ubuntu24 \
                ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
@@ -96,6 +97,7 @@ if [ "${major_ver}.${minor_ver}" = "25.0" ]; then
     platforms="aarch64_AlmaLinux8 \
                aarch64_AlmaLinux9 \
                aarch64_AlmaLinux10 \
+               aarch64_Ubuntu24 \
                ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \

@@ -4,7 +4,7 @@
 usage() {
     echo "Usage: $(basename $0) input area version repo"
     echo
-    echo input example: /nobackup/tim/externals/9.1
+    echo input example: /tmp/special-build
     echo area examples: public private security test
     echo version examples: 8.8.2, 8.9.1
     echo repo examples: snapshot, daily, alpha, rc, beta, update, release
@@ -104,7 +104,7 @@ update_deb_repo_and_publish () {
 echo ======= Updating ${repository} =======
 pushd $input
 # Be sure amd64 packages take precendence
-dirs=$(echo x86_64_* ppc64le_*)
+dirs=$(echo x86_64_* aarch64_* ppc64le_*)
 popd
 
 deb_repo_name=${repo_version}
@@ -133,6 +133,8 @@ for dir in $dirs; do
         drop_deb_publish "ubuntu" "focal"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
         drop_deb_publish "ubuntu" "jammy"
+    elif [ $dir = 'aarch64_Ubuntu24' ]; then
+        drop_deb_publish "ubuntu" "noble"
     elif [ $dir = 'x86_64_Ubuntu24' ]; then
         drop_deb_publish "ubuntu" "noble"
     fi
@@ -160,6 +162,8 @@ if [ $repo != 'release' ]; then
             drop_deb_repo "ubuntu" "focal"
         elif [ $dir = 'x86_64_Ubuntu22' ]; then
             drop_deb_repo "ubuntu" "jammy"
+        elif [ $dir = 'aarch64_Ubuntu24' ]; then
+            drop_deb_repo "ubuntu" "noble"
         elif [ $dir = 'x86_64_Ubuntu24' ]; then
             drop_deb_repo "ubuntu" "noble"
         fi
@@ -187,8 +191,10 @@ for dir in $dirs; do
         update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el,source"
     elif [ $dir = 'x86_64_Ubuntu22' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy" "amd64,source"
+    elif [ $dir = 'aarch64_Ubuntu24' ]; then
+        update_deb_repo_and_publish "aarch64_Ubuntu24" "ubuntu" "noble" "amd64,arm64,source"
     elif [ $dir = 'x86_64_Ubuntu24' ]; then
-        update_deb_repo_and_publish "x86_64_Ubuntu24" "ubuntu" "noble" "amd64,source"
+        update_deb_repo_and_publish "x86_64_Ubuntu24" "ubuntu" "noble" "amd64,arm64,source"
     fi
 done
 

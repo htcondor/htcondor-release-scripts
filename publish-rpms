@@ -65,8 +65,8 @@ update_rpm_repo() {
     mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
     mkdir -p ${repository}/${repo_version}/${platform}/${arch}/${repo}/debug
 
-    cp -a ${platform_name}/*.rpm \
-          ${repository}/${repo_version}/${platform}/${arch}/${repo}
+    rsync -a ${platform_name}/*.rpm \
+             ${repository}/${repo_version}/${platform}/${arch}/${repo}
     mv ${repository}/${repo_version}/${platform}/${arch}/${repo}/*.src.rpm \
           ${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS
     mv ${repository}/${repo_version}/${platform}/${arch}/${repo}/*-debug*.rpm \
@@ -116,8 +116,14 @@ for dir in *; do
         update_rpm_repo "x86_64_AmazonLinux2023" "amzn2023" "x86_64"
     elif [ $dir = 'x86_64_Fedora42' ]; then
         update_rpm_repo "x86_64_Fedora42" "fc42" "x86_64"
+    elif [ $dir = 'x86_64_Fedora43' ]; then
+        update_rpm_repo "x86_64_Fedora43" "fc43" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then
         update_rpm_repo "x86_64_openSUSE15" "leap15" "x86_64"
+    elif [ $dir = 'x86_64_openSUSE16' ]; then
+        update_rpm_repo "x86_64_openSUSE16" "leap16" "x86_64"
+    elif [ $dir = 'x86_64_SLES15SP5' ]; then
+        update_rpm_repo "x86_64_SLES15SP5" "sles15sp5" "x86_64"
     fi
 done
 popd

@@ -110,10 +110,18 @@ for dir in *; do
         sign_rpm_repo "x86_64_Fedora40" "fc40" "x86_64"
     elif [ $dir = 'x86_64_Fedora41' ]; then
         sign_rpm_repo "x86_64_Fedora41" "fc41" "x86_64"
+    elif [ $dir = 'x86_64_Fedora42' ]; then
+        sign_rpm_repo "x86_64_Fedora42" "fc42" "x86_64"
+    elif [ $dir = 'x86_64_Fedora43' ]; then
+        sign_rpm_repo "x86_64_Fedora43" "fc43" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
         sign_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then
         sign_rpm_repo "x86_64_openSUSE15" "leap15" "x86_64"
+    elif [ $dir = 'x86_64_openSUSE16' ]; then
+        sign_rpm_repo "x86_64_openSUSE15" "leap16" "x86_64"
+    elif [ $dir = 'x86_64_SLES15SP5' ]; then
+        sign_rpm_repo "x86_64_SLES15SP5" "sles15sp5" "x86_64"
     fi
 done
 popd

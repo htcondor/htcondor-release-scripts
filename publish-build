@@ -88,6 +88,8 @@ if [ "${major_ver}" = "25" ]; then
                x86_64_Debian12 \
                x86_64_Debian13 \
                x86_64_openSUSE15 \
+               x86_64_openSUSE16 \
+               x86_64_SLES15SP5 \
                x86_64_Ubuntu22 \
                x86_64_Ubuntu24 \
                x86_64_v2_AlmaLinux10"
@@ -106,6 +108,8 @@ if [ "${major_ver}.${minor_ver}" = "25.0" ]; then
                x86_64_Debian12 \
                x86_64_Debian13 \
                x86_64_openSUSE15 \
+               x86_64_openSUSE16 \
+               x86_64_SLES15SP5 \
                x86_64_Ubuntu22 \
                x86_64_Ubuntu24 \
                x86_64_v2_AlmaLinux10"
@@ -281,8 +285,8 @@ else
         fi
     fi
 
-    cp -a ${input}/${src_platform}/condor_${version}.orig.tar.gz \
-          ${tarball}/condor-${version}-src.tar.gz
+    rsync -a ${input}/${src_platform}/condor_${version}.orig.tar.gz \
+             ${tarball}/condor-${version}-src.tar.gz
 
     if [ $repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-src.tar.gz \
@@ -295,8 +299,8 @@ for platform in $platforms; do
     if [ $platform = 'x86_64_CentOS7' ] && [ "${major_ver}" = '23' ] && [ "${minor_ver}" != '0' ]; then
         $(dirname $0)/repack-tarball ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz
     fi
-    cp -a ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
-          ${tarball}/condor-${version}-${platform}-stripped.tar.gz
+    rsync -a ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+             ${tarball}/condor-${version}-${platform}-stripped.tar.gz
     if [ $repo = 'release' ]; then
         tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
                   ${tarball_current}/condor-${platform}-stripped.tar.gz
@@ -304,8 +308,8 @@ for platform in $platforms; do
 done
 
 echo ======= x86_64_macOS${macos} =======
-cp -a ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
-      ${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz
+rsync -a ${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz \
+         ${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz
 if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz \
               ${tarball_current}/condor-x86_64_macOS${macos}-stripped.tar.gz
@@ -313,15 +317,15 @@ fi
 
 
 echo ======= x86_64_Windows =======
-cp -a ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
-      ${tarball}/condor-${version}-Windows-x64.zip
+rsync -a ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip \
+         ${tarball}/condor-${version}-Windows-x64.zip
 if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.zip \
               ${tarball_current}/condor-Windows-x64.zip
 fi
 
-cp -a ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
-      ${tarball}/condor-${version}-Windows-x64.msi
+rsync -a ${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.msi \
+         ${tarball}/condor-${version}-Windows-x64.msi
 if [ $repo = 'release' ]; then
     tcsymlink ../${version}/release/condor-${version}-Windows-x64.msi \
               ${tarball_current}/condor-Windows-x64.msi

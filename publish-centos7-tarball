@@ -1,0 +1,160 @@
+#!/bin/bash
+
+batlab='condorauto@batlab-ap2001.chtc.wisc.edu'
+
+usage() {
+    echo "Usage: $(basename $0) area version build_id repo"
+    echo
+    echo area examples: public private security test
+    echo version examples: 8.8.2, 8.9.1
+    echo build_id example: 543234
+    echo repo examples: snapshot, daily, alpha, rc, beta, update, release
+
+}
+if [ $# -ne 4 ]; then
+    usage
+    exit 1
+fi
+
+tcsymlink() {
+    if [ -f ${tarball_current}/$1 ]; then
+        ln -sf $1 $2
+    fi
+}
+
+area=$1
+version=$2
+build_id=$3
+repo=$4
+
+echo "Area: ${1}, Version: ${version}, Build ID: ${build_id}, Repo: ${repo}"
+
+read -p "Continue? [Y/n] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Nn]$ ]]
+then
+    [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+fi
+
+. $(dirname $0)/common.sh
+
+base="/nobackup/tim/batlab/condor_${version}-${build_id}"
+input="${base}/public"
+tarball="${web_dir}/tarball${suffix}/${repo_version}/${version}/${repo}"
+tarball_current="${web_dir}/tarball${suffix}/${repo_version}/current"
+
+echo "Disk usage for ${tarball_current}"
+if [ -d /p/condor/public/html/htcondor ]; then
+    fs lq -human ${tarball_current}
+elif [ -d /htcss/htcondor ]; then
+    df -h ${tarball_current}
+fi
+echo
+
+if [ ! -d /nobackup/tim/batlab/condor_${version}-${build_id}/public ]; then
+    ssh $batlab "cd /scratch && /scratch/tim/new_stage $version $build_id"
+    ssh $batlab "cd /scratch/condor_${version}-${build_id} && ./get_${build_id}"
+    rsync -av $batlab:/scratch/condor_${version}-${build_id} /nobackup/tim/batlab/
+fi
+
+files=0
+if [ -d /nobackup/tim/batlab/condor_${version}-${build_id}/public ]; then
+    files=$(cd /nobackup/tim/batlab/condor_${version}-${build_id}/public; find -name \*${version}-\* | wc -l)
+fi
+
+if [ $files -eq 0 ]; then
+    echo Version mismatch!
+    ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
+    echo Clean up temp space
+    rm -rf ${base}
+    exit 1
+fi
+
+if [ "${major_ver}" = "23" ]; then
+    platforms="x86_64_CentOS7"
+fi
+
+#Verify downloads
+echo Checking for all platforms...
+missing=0
+
+for platform in $platforms; do
+    if [ ! -d ${input}/${platform} ]; then
+        echo ERROR: $platform not present!
+        missing=1
+    fi
+done
+
+if [ $missing -eq 1 ]; then
+    read -p "Continue? [Y/n] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]
+    then
+        ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
+        echo Clean up temp space
+        rm -rf ${base}
+        exit 1
+    fi
+fi
+
+if [ $repo = 'release' ]; then
+    if [ $area != 'test' ]; then
+        ssh $batlab nmi_pin --days=365 --force ${build_id}
+    else
+        ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
+    fi
+else
+    ssh $batlab rm -rf /scratch/condor_${version}-${build_id}
+fi
+
+# Move tarballs into place
+echo Publish tarballs...
+rm -rf ${tarball}
+mkdir -p ${tarball}
+mkdir -p ${tarball_current}
+
+for platform in $platforms; do
+    echo ======= $platform =======
+    if [ $platform = 'x86_64_CentOS7' ] && [ "${major_ver}" = '23' ] && [ "${minor_ver}" != '0' ]; then
+        $(dirname $0)/repack-tarball ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz
+    fi
+    rsync -a ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz \
+             ${tarball}/condor-${version}-${platform}-stripped.tar.gz
+    if [ $repo = 'release' ]; then
+        tcsymlink ../${version}/release/condor-${version}-${platform}-stripped.tar.gz \
+                  ${tarball_current}/condor-${platform}-stripped.tar.gz
+    fi
+done
+
+echo Sign tarballs...
+(cd ${tarball} && rm -f sha256sum.txt.gpg)
+(cd ${tarball} && sha256sum *${version}* > sha256sum.txt)
+(cd ${tarball} && gpg --sign -u 0x$key sha256sum.txt)
+if [ $repo = 'release' ]; then
+    tcsymlink ../${version}/release/sha256sum.txt ${tarball_current}
+    tcsymlink ../${version}/release/sha256sum.txt.gpg ${tarball_current}
+fi
+
+# Clean out old tarballs
+if [ "$repo" = 'rc' -o "$repo" = 'alpha' ]; then
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/snapshot"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/daily"
+elif [ "$repo" = 'update' -o "$repo" = 'beta' ]; then
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/snapshot"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/daily"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/alpha"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/rc"
+elif [ "$repo" = 'release' ]; then
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/snapshot"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/daily"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/alpha"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/rc"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/beta"
+    rm -rf "${web_dir}/tarball${suffix}/${repo_version}/${version}/update"
+fi
+
+# Clean up temp space
+if [ "$repo" = "release" ]; then
+    echo Clean up temp space
+    rm -rf ${base}
+fi

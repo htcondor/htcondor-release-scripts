@@ -24,6 +24,7 @@ populate () {
 }
 
 populate x86_64 rpm x86_64_AlmaLinux8
+populate noarch rpm x86_64_AlmaLinux8
 ln -s x86_64_AlmaLinux8 x86_64_AlmaLinux9
 ln -s x86_64_AlmaLinux8 x86_64_AlmaLinux10
 ln -s x86_64_AlmaLinux8 x86_64_v2_AlmaLinux10
@@ -33,16 +34,21 @@ ln -s x86_64_AlmaLinux8 x86_64_openSUSE15
 ln -s x86_64_AlmaLinux8 x86_64_openSUSE16
 ln -s x86_64_AlmaLinux8 x86_64_SLES15SP5
 populate amd64 deb x86_64_Debian11
+populate all deb x86_64_Debian11
 ln -s x86_64_Debian11 x86_64_Debian12
 ln -s x86_64_Debian11 x86_64_Debian13
 ln -s x86_64_Debian11 x86_64_Ubuntu20
 ln -s x86_64_Debian11 x86_64_Ubuntu22
 ln -s x86_64_Debian11 x86_64_Ubuntu24
 populate aarch64 rpm aarch64_AlmaLinux8
+populate noarch rpm aarch64_AlmaLinux8
 ln -s aarch64_AlmaLinux8 aarch64_AlmaLinux9
 ln -s aarch64_AlmaLinux8 aarch64_AlmaLinux10
 populate arm64 deb aarch64_Ubuntu24
+populate all deb aarch64_Ubuntu24
 populate ppc64le rpm ppc64le_AlmaLinux8
+populate noarch rpm ppc64le_AlmaLinux8
 #populate ppc64el deb ppc64le_Ubuntu20
+#populate all deb ppc64le_Ubuntu20
 
 rm *.deb *.rpm *.1

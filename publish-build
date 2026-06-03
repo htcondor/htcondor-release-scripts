@@ -80,6 +80,7 @@ if [ "${major_ver}" = "25" ]; then
                aarch64_AlmaLinux9 \
                aarch64_AlmaLinux10 \
                aarch64_Ubuntu24 \
+               aarch64_Ubuntu26 \
                ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
@@ -92,6 +93,7 @@ if [ "${major_ver}" = "25" ]; then
                x86_64_SLES15SP5 \
                x86_64_Ubuntu22 \
                x86_64_Ubuntu24 \
+               x86_64_Ubuntu26 \
                x86_64_v2_AlmaLinux10"
 fi
 
@@ -100,6 +102,7 @@ if [ "${major_ver}.${minor_ver}" = "25.0" ]; then
                aarch64_AlmaLinux9 \
                aarch64_AlmaLinux10 \
                aarch64_Ubuntu24 \
+               aarch64_Ubuntu26 \
                ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
@@ -112,6 +115,7 @@ if [ "${major_ver}.${minor_ver}" = "25.0" ]; then
                x86_64_SLES15SP5 \
                x86_64_Ubuntu22 \
                x86_64_Ubuntu24 \
+               x86_64_Ubuntu26 \
                x86_64_v2_AlmaLinux10"
 fi
 

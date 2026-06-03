@@ -114,6 +114,8 @@ for dir in *; do
         sign_rpm_repo "x86_64_Fedora42" "fc42" "x86_64"
     elif [ $dir = 'x86_64_Fedora43' ]; then
         sign_rpm_repo "x86_64_Fedora43" "fc43" "x86_64"
+    elif [ $dir = 'x86_64_Fedora44' ]; then
+        sign_rpm_repo "x86_64_Fedora44" "fc44" "x86_64"
     elif [ $dir = 'x86_64_Rocky8' ]; then
         sign_rpm_repo "x86_64_Rocky8" "el8" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then

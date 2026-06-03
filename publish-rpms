@@ -118,6 +118,8 @@ for dir in *; do
         update_rpm_repo "x86_64_Fedora42" "fc42" "x86_64"
     elif [ $dir = 'x86_64_Fedora43' ]; then
         update_rpm_repo "x86_64_Fedora43" "fc43" "x86_64"
+    elif [ $dir = 'x86_64_Fedora44' ]; then
+        update_rpm_repo "x86_64_Fedora44" "fc44" "x86_64"
     elif [ $dir = 'x86_64_openSUSE15' ]; then
         update_rpm_repo "x86_64_openSUSE15" "leap15" "x86_64"
     elif [ $dir = 'x86_64_openSUSE16' ]; then

@@ -48,7 +48,7 @@ ln -s aarch64_AlmaLinux8 aarch64_AlmaLinux9
 ln -s aarch64_AlmaLinux8 aarch64_AlmaLinux10
 populate arm64 deb aarch64_Ubuntu24
 populate all deb aarch64_Ubuntu24
-ln -s x86_64_Ubuntu24 x86_64_Ubuntu26
+ln -s aarch64_Ubuntu24 aarch64_Ubuntu26
 populate ppc64le rpm ppc64le_AlmaLinux8
 populate noarch rpm ppc64le_AlmaLinux8
 #populate ppc64el deb ppc64le_Ubuntu20

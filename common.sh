@@ -130,6 +130,17 @@ if [ $major_ver = '25' ]; then
     fi
 fi
 
+# 26 versions
+if [ $major_ver = '26' ]; then
+    if [ $repo = 'snapshot' ]; then
+        # OSG 26 auto signing key
+        key=2C95C1D7E9014F81
+    else
+        # OSG 26 developer signing key
+        key=E7EE3E794C458860
+    fi
+fi
+
 if [ -d /p/condor/public/html/htcondor ]; then
     web_dir='/p/condor/public/html/htcondor'
 elif [ -d /htcss/htcondor ]; then

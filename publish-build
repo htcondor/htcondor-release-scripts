@@ -75,6 +75,42 @@ win64=9
 macos=13
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
+if [ "${major_ver}" = "26" ]; then
+    platforms="aarch64_AlmaLinux8 \
+               aarch64_AlmaLinux9 \
+               aarch64_AlmaLinux10 \
+               aarch64_Ubuntu24 \
+               aarch64_Ubuntu26 \
+               ppc64le_AlmaLinux8 \
+               x86_64_AlmaLinux8 \
+               x86_64_AlmaLinux9 \
+               x86_64_AlmaLinux10 \
+               x86_64_AmazonLinux2023 \
+               x86_64_Debian13 \
+               x86_64_openSUSE16 \
+               x86_64_Ubuntu24 \
+               x86_64_Ubuntu26 \
+               x86_64_v2_AlmaLinux10"
+fi
+
+if [ "${major_ver}.${minor_ver}" = "26.0" ]; then
+    platforms="aarch64_AlmaLinux8 \
+               aarch64_AlmaLinux9 \
+               aarch64_AlmaLinux10 \
+               aarch64_Ubuntu24 \
+               aarch64_Ubuntu26 \
+               ppc64le_AlmaLinux8 \
+               x86_64_AlmaLinux8 \
+               x86_64_AlmaLinux9 \
+               x86_64_AlmaLinux10 \
+               x86_64_AmazonLinux2023 \
+               x86_64_Debian13 \
+               x86_64_openSUSE16 \
+               x86_64_Ubuntu24 \
+               x86_64_Ubuntu26 \
+               x86_64_v2_AlmaLinux10"
+fi
+
 if [ "${major_ver}" = "25" ]; then
     platforms="aarch64_AlmaLinux8 \
                aarch64_AlmaLinux9 \
@@ -273,7 +309,7 @@ if [ $area = 'security' ]; then
     find $input -name \*.src.rpm -print -exec rm -f {} +
 else
     # Copy source tarball from a Debian build
-    src_platform="x86_64_Debian12"
+    src_platform="x86_64_Debian13"
 
     # Check for source tarball
     if [ ! -f ${input}/${src_platform}/condor_${version}.orig.tar.gz ]; then

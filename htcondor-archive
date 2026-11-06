@@ -6,30 +6,26 @@ fi
 
 # The whole version number (3 numbers separated by periods)
 version="$1"
-# shellcheck disable=SC2206 # don't have to worry abour word splitting
-AVERSION=(${version//./ })
-MAJOR_VER=${AVERSION[0]}
-MINOR_VER=${AVERSION[1]}
-PATCH_VER=${AVERSION[2]}
+IFS='.' read -r MAJOR_VER MINOR_VER <<< "$version"
 if [ "$MINOR_VER" -eq 0 ]; then
     ver=$MAJOR_VER.0
 else
     ver=$MAJOR_VER.x
 fi
 
-if [ -d /nobackup/tim/htcondor-archive/$version ]; then
+if [ -d "/nobackup/tim/htcondor-archive/$version" ]; then
     echo "/nobackup/tim/htcondor-archive/$version already exists!"
     exit 1
 fi
 
-mkdir /nobackup/tim/htcondor-archive/$version
-mkdir /nobackup/tim/htcondor-archive/$version/manual
-mkdir /nobackup/tim/htcondor-archive/$version/tarballs
-mkdir /nobackup/tim/htcondor-archive/$version/rpm
-mkdir /nobackup/tim/htcondor-archive/$version/debian
-mkdir /nobackup/tim/htcondor-archive/$version/ubuntu
+mkdir "/nobackup/tim/htcondor-archive/$version"
+mkdir "/nobackup/tim/htcondor-archive/$version/manual"
+mkdir "/nobackup/tim/htcondor-archive/$version/tarballs"
+mkdir "/nobackup/tim/htcondor-archive/$version/rpm"
+mkdir "/nobackup/tim/htcondor-archive/$version/debian"
+mkdir "/nobackup/tim/htcondor-archive/$version/ubuntu"
 
-if [ $MINOR_VER -eq 0 ]; then
+if [ "$MINOR_VER" -eq 0 ]; then
     tag='lts'
 else
     tag='latest'
@@ -37,16 +33,16 @@ fi
 # tag="v$version"
 
 echo Copying Manual...
-wget https://htcondor.readthedocs.io/_/downloads/en/$tag/htmlzip/ -O /nobackup/tim/htcondor-archive/$version/manual/index.html.zip
-wget https://htcondor.readthedocs.io/_/downloads/en/$tag/pdf/ -O /nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.pdf
-wget https://htcondor.readthedocs.io/_/downloads/en/$tag/epub/ -O /nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.epub
+wget "https://htcondor.readthedocs.io/_/downloads/en/$tag/htmlzip/" -O "/nobackup/tim/htcondor-archive/$version/manual/index.html.zip"
+wget "https://htcondor.readthedocs.io/_/downloads/en/$tag/pdf/" -O "/nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.pdf"
+wget "https://htcondor.readthedocs.io/_/downloads/en/$tag/epub/" -O "/nobackup/tim/htcondor-archive/$version/manual/htcondor-${version}.epub"
 echo Copying tarballs...
-(cd /htcss/htcondor/tarball/$ver/$version/release; cp -av * /nobackup/tim/htcondor-archive/$version/tarballs/)
+(cd "/htcss/htcondor/tarball/$ver/$version/release" || exit 1; cp -av ./* "/nobackup/tim/htcondor-archive/$version/tarballs/")
 echo Copying RPMs from RPM repository...
-(cd /htcss/htcondor/repo; tar cf - $(find -L $ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/rpm; tar xvfp -))
+(cd /htcss/htcondor/repo || exit 1; tar cf - "$(find -L "$ver*" -name "*$version-1*")" | (cd "/nobackup/tim/htcondor-archive/$version/rpm" || exit 1; tar xvfp -))
 echo Copying debs from Debian repository...
-(cd /htcss/htcondor/repo; tar cf - $(find -L debian/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/debian; tar xvfp -))
+(cd /htcss/htcondor/repo || exit 1; tar cf - "$(find -L "debian/$ver*" -name "*$version-1*")" | (cd "/nobackup/tim/htcondor-archive/$version/debian" || exit 1; tar xvfp -))
 echo Copying debs from Ubuntu repository...
-(cd /htcss/htcondor/repo; tar cf - $(find -L ubuntu/$ver* -name \*$version-1\*) | (cd /nobackup/tim/htcondor-archive/$version/ubuntu; tar xvfp -))
+(cd /htcss/htcondor/repo || exit 1; tar cf - "$(find -L "ubuntu/$ver*" -name "*$version-1*")" | (cd "/nobackup/tim/htcondor-archive/$version/ubuntu" || exit 1; tar xvfp -))
 
-du -shx /nobackup/tim/htcondor-archive/$version/*
+du -shx "/nobackup/tim/htcondor-archive/$version/*"

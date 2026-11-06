@@ -2,7 +2,7 @@
 # Usage: publish-debs deb-directory area version repo
 
 usage() {
-    echo "Usage: $(basename $0) input area version repo"
+    echo "Usage: $(basename "$0") input area version repo"
     echo
     echo input example: /tmp/special-build
     echo area examples: public private security test
@@ -12,7 +12,7 @@ usage() {
 }
 
 confirm=1
-if [ $# -ge 1 -a "$1" = "-y" ]; then
+if [ $# -ge 1 ] && [ "$1" = "-y" ]; then
     confirm=0
     shift
 fi
@@ -27,8 +27,8 @@ area=$2
 version=$3
 repo=$4
 
-if [ ! -d $1 ]; then
-    echo ERROR: no directory: $1
+if [ ! -d "$1" ]; then
+    echo "ERROR: no directory: $1"
     usage
     exit 1
 fi
@@ -39,15 +39,15 @@ if [ $confirm -eq 1 ]; then
     echo
     if [[ $REPLY =~ ^[Nn]$ ]]
     then
-        [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+        [[ "$0" = "${BASH_SOURCE[0]}" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
     fi
 else
     echo
 fi
 
-. $(dirname $0)/common.sh $area $version $repo
+. "$(dirname "$0")/common.sh" "$area" "$version" "$repo"
 
-aptly="/nobackup/tim/bin/aptly -config=$(dirname $0)/aptly${suffix}.conf"
+aptly="/nobackup/tim/bin/aptly -config=$(dirname "$0")/aptly${suffix}.conf"
 
 # Update Debian/Ubuntu repositories
 
@@ -55,9 +55,9 @@ drop_deb_publish () {
     distro=$1
     code_name=$2
 
-    if ${aptly} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
+    if ${aptly} publish show "$code_name" "$distro/$deb_repo_name" > /dev/null 2>&1; then
         echo "======= Dropping publish ${deb_repo_name} $distro $code_name ======="
-        ${aptly} publish drop $code_name $distro/$deb_repo_name
+        ${aptly} publish drop "$code_name" "$distro/$deb_repo_name"
     fi
 }
 
@@ -65,9 +65,9 @@ drop_deb_repo () {
     distro=$1
     code_name=$2
 
-    if ${aptly} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
+    if ${aptly} repo show "$deb_repo_name-$code_name" > /dev/null 2>&1; then
         echo "======= Dropping repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly} repo drop $deb_repo_name-$code_name
+        ${aptly} repo drop "$deb_repo_name-$code_name"
     fi
 }
 
@@ -78,101 +78,101 @@ update_deb_repo_and_publish () {
     arch=$4
     aptly_arch="${aptly} -architectures=${arch}"
 
-    if ! ${aptly_arch} repo show $deb_repo_name-$code_name > /dev/null 2>&1; then
+    if ! ${aptly_arch} repo show "$deb_repo_name-$code_name "> /dev/null 2>&1; then
         echo "======= Creating repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly_arch} repo create -distribution=$code_name $deb_repo_name-$code_name
+        ${aptly_arch} repo create -distribution="$code_name $deb_repo_name-$code_name"
     fi
     echo "======= Adding packages to repo ${deb_repo_name} $distro $code_name ======="
-    ${aptly_arch} repo add $deb_repo_name-$code_name ${input}/${platform_name}
+    ${aptly_arch} repo add "$deb_repo_name-$code_name" "${input}/${platform_name}"
     # Be sure to add the necessary externals
-    if [ -d /nobackup/tim/externals/${repo_version}/${platform_name} ]; then
+    if [ -d "/nobackup/tim/externals/${repo_version}/${platform_name}" ]; then
         echo "======= Adding external packages to repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly_arch} repo add $deb_repo_name-$code_name /nobackup/tim/externals/${repo_version}/${platform_name}
+        ${aptly_arch} repo add "$deb_repo_name-$code_name" "/nobackup/tim/externals/${repo_version}/${platform_name}"
     else
         echo "WARNING: No externals to add to repository"
     fi
 
-    if ${aptly_arch} publish show $code_name $distro/$deb_repo_name > /dev/null 2>&1; then
+    if ${aptly_arch} publish show "$code_name $distro/$deb_repo_name" > /dev/null 2>&1; then
         echo "======= Updating publish ${deb_repo_name} $distro $code_name ======="
-        ${aptly_arch} publish update -gpg-key=$key $code_name $distro/$deb_repo_name
+        ${aptly_arch} publish update -gpg-key=$key "$code_name $distro/$deb_repo_name"
     else
         echo "======= Publishing repo ${deb_repo_name} $distro $code_name ======="
-        ${aptly_arch} publish repo -gpg-key=$key $deb_repo_name-$code_name $distro/$deb_repo_name
+        ${aptly_arch} publish repo -gpg-key=$key "$deb_repo_name-$code_name $distro/$deb_repo_name"
     fi
 }
 
-echo ======= Updating ${repository} =======
-pushd $input
+echo "======= Updating ${repository} ======="
+pushd "$input" || exit 1
 # Be sure amd64 packages take precendence
 dirs=$(echo x86_64_* aarch64_* ppc64le_*)
-popd
+popd || exit 1
 
 deb_repo_name=${repo_version}
-if [ $repo != 'release' ]; then
+if [ "$repo" != 'release' ]; then
     deb_repo_name=${deb_repo_name}-${repo}
 fi
 
 # Always drop the publish
 # Because you cannot add new CPU architectures to existing publishes
 for dir in $dirs; do
-    if [ $dir = 'x86_64_Debian9' ]; then
+    if [ "$dir" = 'x86_64_Debian9' ]; then
         drop_deb_publish "debian" "stretch"
-    elif [ $dir = 'x86_64_Debian10' ]; then
+    elif [ "$dir" = 'x86_64_Debian10' ]; then
         drop_deb_publish "debian" "buster"
-    elif [ $dir = 'x86_64_Debian11' ]; then
+    elif [ "$dir" = 'x86_64_Debian11' ]; then
         drop_deb_publish "debian" "bullseye"
-    elif [ $dir = 'x86_64_Debian12' ]; then
+    elif [ "$dir" = 'x86_64_Debian12' ]; then
         drop_deb_publish "debian" "bookworm"
-    elif [ $dir = 'x86_64_Debian13' ]; then
+    elif [ "$dir" = 'x86_64_Debian13' ]; then
         drop_deb_publish "debian" "trixie"
-    elif [ $dir = 'x86_64_Ubuntu18' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu18' ]; then
         drop_deb_publish "ubuntu" "bionic"
-    elif [ $dir = 'x86_64_Ubuntu20' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu20' ]; then
         drop_deb_publish "ubuntu" "focal"
-    elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+    elif [ "$dir" = 'ppc64le_Ubuntu20' ]; then
         drop_deb_publish "ubuntu" "focal"
-    elif [ $dir = 'x86_64_Ubuntu22' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu22' ]; then
         drop_deb_publish "ubuntu" "jammy"
-    elif [ $dir = 'aarch64_Ubuntu24' ]; then
+    elif [ "$dir" = 'aarch64_Ubuntu24' ]; then
         drop_deb_publish "ubuntu" "noble"
-    elif [ $dir = 'x86_64_Ubuntu24' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu24' ]; then
         drop_deb_publish "ubuntu" "noble"
-    elif [ $dir = 'aarch64_Ubuntu26' ]; then
+    elif [ "$dir" = 'aarch64_Ubuntu26' ]; then
         drop_deb_publish "ubuntu" "resolute"
-    elif [ $dir = 'x86_64_Ubuntu26' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu26' ]; then
         drop_deb_publish "ubuntu" "resolute"
     fi
 done
 
 # Drop old repos for snapshot and rc builds
 # Because the souce tarball changes with a fixed version number
-if [ $repo != 'release' ]; then
+if [ "$repo" != 'release' ]; then
     for dir in $dirs; do
-        if [ $dir = 'x86_64_Debian9' ]; then
+        if [ "$dir" = 'x86_64_Debian9' ]; then
             drop_deb_repo "debian" "stretch"
-        elif [ $dir = 'x86_64_Debian10' ]; then
+        elif [ "$dir" = 'x86_64_Debian10' ]; then
             drop_deb_repo "debian" "buster"
-        elif [ $dir = 'x86_64_Debian11' ]; then
+        elif [ "$dir" = 'x86_64_Debian11' ]; then
             drop_deb_repo "debian" "bullseye"
-        elif [ $dir = 'x86_64_Debian12' ]; then
+        elif [ "$dir" = 'x86_64_Debian12' ]; then
             drop_deb_repo "debian" "bookworm"
-        elif [ $dir = 'x86_64_Debian13' ]; then
+        elif [ "$dir" = 'x86_64_Debian13' ]; then
             drop_deb_repo "debian" "trixie"
-        elif [ $dir = 'x86_64_Ubuntu18' ]; then
+        elif [ "$dir" = 'x86_64_Ubuntu18' ]; then
             drop_deb_repo "ubuntu" "bionic"
-        elif [ $dir = 'x86_64_Ubuntu20' ]; then
+        elif [ "$dir" = 'x86_64_Ubuntu20' ]; then
             drop_deb_repo "ubuntu" "focal"
-        elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+        elif [ "$dir" = 'ppc64le_Ubuntu20' ]; then
             drop_deb_repo "ubuntu" "focal"
-        elif [ $dir = 'x86_64_Ubuntu22' ]; then
+        elif [ "$dir" = 'x86_64_Ubuntu22' ]; then
             drop_deb_repo "ubuntu" "jammy"
-        elif [ $dir = 'aarch64_Ubuntu24' ]; then
+        elif [ "$dir" = 'aarch64_Ubuntu24' ]; then
             drop_deb_repo "ubuntu" "noble"
-        elif [ $dir = 'x86_64_Ubuntu24' ]; then
+        elif [ "$dir" = 'x86_64_Ubuntu24' ]; then
             drop_deb_repo "ubuntu" "noble"
-        elif [ $dir = 'aarch64_Ubuntu26' ]; then
+        elif [ "$dir" = 'aarch64_Ubuntu26' ]; then
             drop_deb_repo "ubuntu" "resolute"
-        elif [ $dir = 'x86_64_Ubuntu26' ]; then
+        elif [ "$dir" = 'x86_64_Ubuntu26' ]; then
             drop_deb_repo "ubuntu" "resolute"
         fi
     done
@@ -181,31 +181,31 @@ fi
 
 # Publish new packages
 for dir in $dirs; do
-    if [ $dir = 'x86_64_Debian9' ]; then
+    if [ "$dir" = 'x86_64_Debian9' ]; then
         update_deb_repo_and_publish "x86_64_Debian9" "debian" "stretch" "amd64,source"
-    elif [ $dir = 'x86_64_Debian10' ]; then
+    elif [ "$dir" = 'x86_64_Debian10' ]; then
         update_deb_repo_and_publish "x86_64_Debian10" "debian" "buster" "amd64,source"
-    elif [ $dir = 'x86_64_Debian11' ]; then
+    elif [ "$dir" = 'x86_64_Debian11' ]; then
         update_deb_repo_and_publish "x86_64_Debian11" "debian" "bullseye" "amd64,source"
-    elif [ $dir = 'x86_64_Debian12' ]; then
+    elif [ "$dir" = 'x86_64_Debian12' ]; then
         update_deb_repo_and_publish "x86_64_Debian12" "debian" "bookworm" "amd64,source"
-    elif [ $dir = 'x86_64_Debian13' ]; then
+    elif [ "$dir" = 'x86_64_Debian13' ]; then
         update_deb_repo_and_publish "x86_64_Debian13" "debian" "trixie" "amd64,source"
-    elif [ $dir = 'x86_64_Ubuntu18' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu18' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu18" "ubuntu" "bionic" "amd64,source"
-    elif [ $dir = 'x86_64_Ubuntu20' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu20' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el,source"
-    elif [ $dir = 'ppc64le_Ubuntu20' ]; then
+    elif [ "$dir" = 'ppc64le_Ubuntu20' ]; then
         update_deb_repo_and_publish "ppc64le_Ubuntu20" "ubuntu" "focal" "amd64,ppc64el,source"
-    elif [ $dir = 'x86_64_Ubuntu22' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu22' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu22" "ubuntu" "jammy" "amd64,source"
-    elif [ $dir = 'aarch64_Ubuntu24' ]; then
+    elif [ "$dir" = 'aarch64_Ubuntu24' ]; then
         update_deb_repo_and_publish "aarch64_Ubuntu24" "ubuntu" "noble" "amd64,arm64,source"
-    elif [ $dir = 'x86_64_Ubuntu24' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu24' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu24" "ubuntu" "noble" "amd64,arm64,source"
-    elif [ $dir = 'aarch64_Ubuntu26' ]; then
+    elif [ "$dir" = 'aarch64_Ubuntu26' ]; then
         update_deb_repo_and_publish "aarch64_Ubuntu26" "ubuntu" "resolute" "amd64,arm64,source"
-    elif [ $dir = 'x86_64_Ubuntu26' ]; then
+    elif [ "$dir" = 'x86_64_Ubuntu26' ]; then
         update_deb_repo_and_publish "x86_64_Ubuntu26" "ubuntu" "resolute" "amd64,arm64,source"
     fi
 done
@@ -213,11 +213,11 @@ done
 # Rsync up to the web server
 for distro in 'debian' 'ubuntu'; do
     echo "======= Updating ${repository}/${distro}/${deb_repo_name} ======="
-    mkdir -p ${repository}/${distro}/${deb_repo_name}
+    mkdir -p "${repository}/${distro}/${deb_repo_name}"
     # Put the new files in the pool
-    rsync -rlotv /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/pool ${repository}/${distro}/${deb_repo_name}/
+    rsync -rlotv "/nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/pool" "${repository}/${distro}/${deb_repo_name}/"
     # Update the dists to point to the new files
-    rsync -rlotv /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/dists ${repository}/${distro}/${deb_repo_name}/
+    rsync -rlotv "/nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/dists" "${repository}/${distro}/${deb_repo_name}/"
     # Delete any old files
-    rsync -rlotv --delete /nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/* ${repository}/${distro}/${deb_repo_name}/
+    rsync -rlotv --delete "/nobackup/tim/aptly${suffix}/public/${distro}/${deb_repo_name}/*" "${repository}/${distro}/${deb_repo_name}/"
 done

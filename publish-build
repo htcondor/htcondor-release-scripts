@@ -81,7 +81,6 @@ if [ "${major_ver}" = "26" ]; then
                aarch64_AlmaLinux10 \
                aarch64_Ubuntu24 \
                aarch64_Ubuntu26 \
-               ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
                x86_64_AlmaLinux10 \
@@ -99,7 +98,6 @@ if [ "${major_ver}.${minor_ver}" = "26.0" ]; then
                aarch64_AlmaLinux10 \
                aarch64_Ubuntu24 \
                aarch64_Ubuntu26 \
-               ppc64le_AlmaLinux8 \
                x86_64_AlmaLinux8 \
                x86_64_AlmaLinux9 \
                x86_64_AlmaLinux10 \

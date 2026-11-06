@@ -45,7 +45,7 @@ else
     echo
 fi
 
-. $(dirname $0)/common.sh
+. $(dirname $0)/common.sh $area $version $repo
 
 sign_rpm_repo() {
     platform_name=$1

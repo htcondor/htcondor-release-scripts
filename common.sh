@@ -1,5 +1,9 @@
 #!/bin/bash
 
+area=$1
+version=$2
+repo=$3
+
 # Make sure we have an AFS tokens
 if [ -d /p/condor/public/html/htcondor ]; then
     if ! tokens | grep -q Expires; then
@@ -22,10 +26,7 @@ else
     exit 1
 fi
 
-aversion=(${version//./ })
-major_ver=${aversion[0]}
-minor_ver=${aversion[1]}
-patch_ver=${aversion[2]}
+IFS='.' read -r major_ver minor_ver <<< "$version"
 
 # Check repo against major version
 if [ "$major_ver" -le 23 ]; then

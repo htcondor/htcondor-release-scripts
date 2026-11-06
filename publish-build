@@ -36,7 +36,7 @@ then
     [[ "$0" = "$BASH_SOURCE" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
 fi
 
-. $(dirname $0)/common.sh
+. $(dirname $0)/common.sh $area $version $repo
 
 base="/nobackup/tim/batlab/condor_${version}-${build_id}"
 input="${base}/public"

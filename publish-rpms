@@ -45,7 +45,7 @@ else
     echo
 fi
 
-. $(dirname $0)/common.sh
+. $(dirname $0)/common.sh $area $version $repo
 
 # Move RPMs into place
 

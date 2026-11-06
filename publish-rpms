@@ -50,11 +50,15 @@ fi
 # Move RPMs into place
 
 echo Sign RPMs...
-signed=1
-while [ $signed != 0 ]; do
-    rpmsign --addsign --digest-algo=sha256 --key-id=$key $(find ${input} -name \*.rpm)
-    signed=$?
-done
+short_key=${key: -8}
+while IFS= read -r -d '' package; do
+    if ! rpm -Kv $package | grep -qi $short_key; then
+        if ! rpmsign --addsign --digest-algo=sha256 --key-id=$key $package; then
+            echo Signature failed!
+            exit 1
+        fi
+    fi
+done < <(find "${input}" -name "*.rpm" -print0)
 
 update_rpm_repo() {
     platform_name=$1

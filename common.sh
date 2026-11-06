@@ -11,9 +11,15 @@ fi
 # Ensure things are group writable
 umask 0002
 
-suffix="-${area}"
-if [ $area = 'public' ]; then
-    suffix=""
+if [ "$area" = 'public' ] || [ "$area" = 'private' ] || [ "$area" = 'security' ] || [ "$area" = 'test' ]; then
+    if [ "$area" = 'public' ]; then
+        suffix=""
+    else
+        suffix="-${area}"
+    fi
+else
+    echo Bad repo designation: "$area"
+    exit 1
 fi
 
 aversion=(${version//./ })
@@ -22,30 +28,30 @@ minor_ver=${aversion[1]}
 patch_ver=${aversion[2]}
 
 # Check repo against major version
-if [ $major_ver -le 23 ]; then
-    if [ $repo = 'daily' ] || [ $repo = 'rc' ] || [ $repo = 'update' ] || [ $repo = 'release' ]; then
+if [ "$major_ver" -le 23 ]; then
+    if [ "$repo" = 'daily' ] || [ "$repo" = 'rc' ] || [ "$repo" = 'update' ] || [ "$repo" = 'release' ]; then
         true # looks good
     else
-        echo Bad repo designation: $repo
+        echo Bad repo designation: "$repo"
         exit 1
     fi
 else
-    if [ $repo = 'snapshot' ] || [ $repo = 'alpha' ] || [ $repo = 'beta' ] || [ $repo = 'release' ]; then
+    if [ "$repo" = 'snapshot' ] || [ "$repo" = 'alpha' ] || [ "$repo" = 'beta' ] || [ "$repo" = 'release' ]; then
         true # looks good
     else
-        echo Bad repo designation: $repo
+        echo Bad repo designation: "$repo"
         exit 1
     fi
 fi
 
 repo_version="${major_ver}.${minor_ver}"
-if [ $major_ver -eq 9 ]; then
-    if [ $minor_ver -ne 0 ]; then
+if [ "$major_ver" -eq 9 ]; then
+    if [ "$minor_ver" -ne 0 ]; then
         repo_version="${major_ver}.1"
     fi
 fi
-if [ $major_ver -ge 10 ]; then
-    if [ $minor_ver -ne 0 ]; then
+if [ "$major_ver" -ge 10 ]; then
+    if [ "$minor_ver" -ne 0 ]; then
         repo_version="${major_ver}.x"
     fi
 fi
@@ -54,8 +60,8 @@ fi
 key=670079F6
 
 # 9.0 LTS series
-if [ $repo_version = '9.0' ]; then
-    if [ $repo = 'daily' ]; then
+if [ "$repo_version" = '9.0' ]; then
+    if [ "$repo" = 'daily' ]; then
         # HTCondor 9.0 Daily Key
         key=8A314675
     else
@@ -65,8 +71,8 @@ if [ $repo_version = '9.0' ]; then
 fi
 
 # 9.x Feature series
-if [ $repo_version = '9.1' ]; then
-    if [ $repo = 'daily' ]; then
+if [ "$repo_version" = '9.1' ]; then
+    if [ "$repo" = 'daily' ]; then
         # HTCondor 9.1 Daily Key
         key=EC836AA7
     else
@@ -76,8 +82,8 @@ if [ $repo_version = '9.1' ]; then
 fi
 
 # 10.0 LTS series
-if [ $repo_version = '10.0' ]; then
-    if [ $repo = 'daily' ]; then
+if [ "$repo_version" = '10.0' ]; then
+    if [ "$repo" = 'daily' ]; then
         # HTCondor 10.0 Daily Key
         key=8CF6700A
     else
@@ -87,8 +93,8 @@ if [ $repo_version = '10.0' ]; then
 fi
 
 # 10.x Feature series
-if [ $repo_version = '10.x' ]; then
-    if [ $repo = 'daily' ]; then
+if [ "$repo_version" = '10.x' ]; then
+    if [ "$repo" = 'daily' ]; then
         # HTCondor 10.x Daily Key
         key=28D1E5B6
     else
@@ -98,8 +104,8 @@ if [ $repo_version = '10.x' ]; then
 fi
 
 # 23 versions
-if [ $major_ver = '23' ]; then
-    if [ $repo = 'daily' ]; then
+if [ "$major_ver" = '23' ]; then
+    if [ "$repo" = 'daily' ]; then
         # OSG 23 auto signing key
         key=1760EDF64D4384D0
     else
@@ -109,8 +115,8 @@ if [ $major_ver = '23' ]; then
 fi
 
 # 24 versions
-if [ $major_ver = '24' ]; then
-    if [ $repo = 'snapshot' ]; then
+if [ "$major_ver" = '24' ]; then
+    if [ "$repo" = 'snapshot' ]; then
         # OSG 24 auto signing key
         key=51F0C13734E958B3
     else
@@ -120,8 +126,8 @@ if [ $major_ver = '24' ]; then
 fi
 
 # 25 versions
-if [ $major_ver = '25' ]; then
-    if [ $repo = 'snapshot' ]; then
+if [ "$major_ver" = '25' ]; then
+    if [ "$repo" = 'snapshot' ]; then
         # OSG 25 auto signing key
         key=467CD904222C5D49
     else
@@ -131,8 +137,8 @@ if [ $major_ver = '25' ]; then
 fi
 
 # 26 versions
-if [ $major_ver = '26' ]; then
-    if [ $repo = 'snapshot' ]; then
+if [ "$major_ver" = '26' ]; then
+    if [ "$repo" = 'snapshot' ]; then
         # OSG 26 auto signing key
         key=2C95C1D7E9014F81
     else
@@ -153,18 +159,18 @@ repository="${web_dir}/repo${suffix}"
 
 echo "Disk usage for $repository/$repo_version"
 if [ -d /p/condor/public/html/htcondor ]; then
-    fs lq -human $repository/$repo_version
+    fs lq -human "$repository/$repo_version"
 elif [ -d /htcss/htcondor ]; then
-    df -h $repository/$repo_version
+    df -h "$repository/$repo_version"
 fi
 echo
 
 # Make sure we can sign something
-echo $key > /tmp/$area$suffix-$repo_version
-if ! gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor /tmp/$area$suffix-$repo_version; then
+echo $key > "/tmp/$area$suffix-$repo_version"
+if ! gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor "/tmp/$area$suffix-$repo_version"; then
     echo Cannot sign
-    rm /tmp/$area$suffix-$repo_version*
+    rm "/tmp/$area$suffix-$repo_version*"
     exit 1
 fi
-rm /tmp/$area$suffix-$repo_version*
+rm "/tmp/$area$suffix-$repo_version*"
 

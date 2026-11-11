@@ -73,7 +73,7 @@ fi
 
 # Windows 9 platform is really Windows 10
 win64=9
-macos=13
+macos=26
 
 # These are Linux platforms. Mac and Window platforms are handled specially.
 if [ "${major_ver}" = "26" ]; then

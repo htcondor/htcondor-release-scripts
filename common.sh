@@ -26,7 +26,8 @@ else
     exit 1
 fi
 
-IFS='.' read -r major_ver minor_ver <<< "$version"
+# shellcheck disable=SC2034 # patch_ver is unused
+IFS='.' read -r major_ver minor_ver patch_ver <<< "$version"
 
 # Check repo against major version
 if [ "$major_ver" -le 23 ]; then
@@ -170,8 +171,8 @@ echo
 echo $key > "/tmp/$area$suffix-$repo_version"
 if ! gpg --detach-sign -u 0x$key --digest-algo=sha256 --yes --armor "/tmp/$area$suffix-$repo_version"; then
     echo Cannot sign
-    rm "/tmp/$area$suffix-$repo_version*"
+    rm "/tmp/$area$suffix-$repo_version"*
     exit 1
 fi
-rm "/tmp/$area$suffix-$repo_version*"
+rm "/tmp/$area$suffix-$repo_version"*
 

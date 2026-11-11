@@ -336,9 +336,9 @@ fi
 for platform in $platforms; do
     echo "======= $platform ======="
     if [ "$platform" = 'x86_64_CentOS7' ] && [ "${major_ver}" = '23' ] && [ "${minor_ver}" != '0' ]; then
-        "$(dirname "$0")/repack-tarball ${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz"
+        "$(dirname "$0")/repack-tarball" "${input}/${platform}/condor-${version}"*"-${platform}-stripped.tar.gz"
     fi
-    rsync -a "${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz" \
+    rsync -a "${input}/${platform}/condor-${version}"*"-${platform}-stripped.tar.gz" \
              "${tarball}/condor-${version}-${platform}-stripped.tar.gz"
     if [ "$repo" = 'release' ]; then
         tcsymlink "../${version}/release/condor-${version}-${platform}-stripped.tar.gz" \
@@ -347,13 +347,12 @@ for platform in $platforms; do
 done
 
 echo ======= x86_64_macOS${macos} =======
-rsync -a "${input}/x86_64_macOS${macos}/condor-${version}*-x86_64_macOS${macos}-stripped.tar.gz" \
+rsync -a "${input}/x86_64_macOS${macos}/condor-${version}"*"-x86_64_macOS${macos}-stripped.tar.gz" \
          "${tarball}/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz"
 if [ "$repo" = 'release' ]; then
     tcsymlink "../${version}/release/condor-${version}-x86_64_macOS${macos}-stripped.tar.gz" \
               "${tarball_current}/condor-x86_64_macOS${macos}-stripped.tar.gz"
 fi
-
 
 echo ======= x86_64_Windows =======
 rsync -a "${input}/x86_64_Windows${win64}/condor-${version}-${build_id}-Windows${win64}-x64.zip" \
@@ -372,7 +371,8 @@ fi
 
 echo Sign tarballs...
 (cd "${tarball}" && rm -f sha256sum.txt.gpg)
-(cd "${tarball}" && sha256sum "*${version}*" > sha256sum.txt)
+# shellcheck disable=SC2035 # Filename won't start with -
+(cd "${tarball}" && sha256sum *"${version}"* > sha256sum.txt)
 (cd "${tarball}" && gpg --sign -u 0x$key sha256sum.txt)
 if [ "$repo" = 'release' ]; then
     tcsymlink "../${version}/release/sha256sum.txt" "${tarball_current}"

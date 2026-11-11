@@ -69,11 +69,11 @@ update_rpm_repo() {
     mkdir -p "${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS"
     mkdir -p "${repository}/${repo_version}/${platform}/${arch}/${repo}/debug"
 
-    rsync -a "${platform_name}/*.rpm" \
+    rsync -a "${platform_name}/"*.rpm \
              "${repository}/${repo_version}/${platform}/${arch}/${repo}"
-    mv "${repository}/${repo_version}/${platform}/${arch}/${repo}/*.src.rpm" \
+    mv "${repository}/${repo_version}/${platform}/${arch}/${repo}/"*.src.rpm \
           "${repository}/${repo_version}/${platform}/${arch}/${repo}/SRPMS"
-    mv "${repository}/${repo_version}/${platform}/${arch}/${repo}/*-debug*.rpm" \
+    mv "${repository}/${repo_version}/${platform}/${arch}/${repo}/"*-debug*.rpm \
           "${repository}/${repo_version}/${platform}/${arch}/${repo}/debug"
 
     echo "======= ${repo_version}/${platform}/${arch}/${repo}/SRPMS ======="

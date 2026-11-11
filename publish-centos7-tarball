@@ -117,9 +117,9 @@ mkdir -p "${tarball_current}"
 for platform in $platforms; do
     echo "======= $platform ======="
     if [ "$platform" = 'x86_64_CentOS7' ] && [ "${major_ver}" = '23' ] && [ "${minor_ver}" != '0' ]; then
-        "$(dirname "$0")/repack-tarball" "${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz"
+        "$(dirname "$0")/repack-tarball" "${input}/${platform}/condor-${version}"*"-${platform}-stripped.tar.gz"
     fi
-    rsync -a "${input}/${platform}/condor-${version}*-${platform}-stripped.tar.gz" \
+    rsync -a "${input}/${platform}/condor-${version}"*"-${platform}-stripped.tar.gz" \
              "${tarball}/condor-${version}-${platform}-stripped.tar.gz"
     if [ "$repo" = 'release' ]; then
         tcsymlink "../${version}/release/condor-${version}-${platform}-stripped.tar.gz" \
@@ -129,7 +129,8 @@ done
 
 echo Sign tarballs...
 (cd "${tarball}" && rm -f sha256sum.txt.gpg)
-(cd "${tarball}" && sha256sum "*${version}*" > sha256sum.txt)
+# shellcheck disable=SC2035 # Filename won't start with -
+(cd "${tarball}" && sha256sum *"${version}"* > sha256sum.txt)
 (cd "${tarball}" && gpg --sign -u 0x$key sha256sum.txt)
 if [ "$repo" = 'release' ]; then
     tcsymlink "../${version}/release/sha256sum.txt" "${tarball_current}"
